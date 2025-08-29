@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from typing import List
+import os
 from app.models.schemas import (
     LinkInput, ExtractionResponse, QuestionInput, 
     AnswerResponse, TTSRequest, TTSResponse, HealthCheck
@@ -70,6 +72,35 @@ async def upload_audio(audio: UploadFile = File(...)):
         return {"question": question}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Audio transcription failed: {str(e)}")
+
+@router.get("/voices")
+async def get_voices():
+    try:
+        tts_service = TTSService()
+        voices = await tts_service.get_available_voices()
+        return {"voices": voices}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get voices: {str(e)}")
+
+@router.get("/audio/{filename}")
+async def get_audio_file(filename: str):
+    # Clean up old audio files (older than 1 hour)
+    import glob
+    import time
+    current_time = time.time()
+    for old_file in glob.glob("/tmp/tts_*.mp3"):
+        try:
+            file_age = current_time - os.path.getmtime(old_file)
+            if file_age > 3600:  # 1 hour
+                os.remove(old_file)
+        except:
+            pass
+    
+    file_path = f"/tmp/{filename.split('?')[0]}"  # Remove query params
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="audio/mpeg")
+    else:
+        raise HTTPException(status_code=404, detail="Audio file not found")
 
 @router.get("/health", response_model=HealthCheck)
 async def health_check():

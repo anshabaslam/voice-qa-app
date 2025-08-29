@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { SpeakerWaveIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid';
 import { useAppStore } from '../stores/appStore';
+import { useVoice } from '../contexts/VoiceContext';
 import { apiService } from '../services/api';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
 export const AnswerDisplay: React.FC = () => {
   const { currentQuestion, currentAnswer, sessionId, isLoading, setLoading, setCurrentAnswer, setError } = useAppStore();
+  const { speak, settings } = useVoice();
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  // const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const handleAskQuestion = async () => {
     if (!currentQuestion.trim()) {
@@ -48,40 +49,18 @@ export const AnswerDisplay: React.FC = () => {
     setIsPlayingAudio(true);
 
     try {
-      // Try to generate TTS
-      const result = await apiService.textToSpeech(currentAnswer.answer);
+      console.log('AnswerDisplay: Using voice:', settings.selectedVoice);
       
-      if (result.audio_url) {
-        // Server-generated audio
-        const audio = new Audio(result.audio_url);
-        audio.onended = () => setIsPlayingAudio(false);
-        audio.onerror = () => {
-          setIsPlayingAudio(false);
-          // Fallback to browser TTS
-          useBrowserTTS();
-        };
-        await audio.play();
-      } else {
-        // Use browser TTS
-        useBrowserTTS();
-      }
+      // Use the VoiceContext speak function which will use the selected voice
+      await speak(currentAnswer.answer);
+      
+      toast.success(`Answer read aloud${settings.selectedVoice ? ' with selected voice' : ''}`);
     } catch (error) {
-      console.error('TTS failed, using browser fallback:', error);
-      useBrowserTTS();
-    }
-  };
-
-  const useBrowserTTS = () => {
-    if (!currentAnswer?.answer) return;
-
-    const utterance = new SpeechSynthesisUtterance(currentAnswer.answer);
-    utterance.onend = () => setIsPlayingAudio(false);
-    utterance.onerror = () => {
-      setIsPlayingAudio(false);
+      console.error('TTS failed:', error);
       toast.error('Text-to-speech failed');
-    };
-    
-    speechSynthesis.speak(utterance);
+    } finally {
+      setIsPlayingAudio(false);
+    }
   };
 
   const copyToClipboard = async () => {

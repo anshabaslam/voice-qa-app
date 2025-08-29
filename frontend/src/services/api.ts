@@ -84,6 +84,12 @@ export const apiService = {
     return response.data;
   },
 
+  // Get available voices
+  getVoices: async (): Promise<{ voices: { id: string; name: string }[] }> => {
+    const response = await api.get('/voices');
+    return response.data;
+  },
+
   // Health check
   healthCheck: async (): Promise<{ status: string; version: string; services: any }> => {
     const response = await api.get('/health');

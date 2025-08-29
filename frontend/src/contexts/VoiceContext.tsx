@@ -1,17 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
-export type VoiceProvider = 'browser' | 'elevenlabs' | 'custom';
+export type VoiceProvider = 'elevenlabs';
 
 interface VoiceSettings {
   provider: VoiceProvider;
   selectedVoice: string;
-  elevenLabsApiKey: string;
-  customVoices: Array<{
-    id: string;
-    name: string;
-    file: File;
-    url: string;
-  }>;
 }
 
 interface VoiceContextType {
@@ -21,10 +14,8 @@ interface VoiceContextType {
 }
 
 const defaultSettings: VoiceSettings = {
-  provider: 'browser',
+  provider: 'elevenlabs',
   selectedVoice: '',
-  elevenLabsApiKey: '',
-  customVoices: [],
 };
 
 const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
@@ -49,40 +40,69 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     const updatedSettings = { ...settings, ...newSettings };
     setSettings(updatedSettings);
     
-    // Save to localStorage (excluding File objects)
-    const settingsToStore = {
-      ...updatedSettings,
-      customVoices: updatedSettings.customVoices.map(voice => ({
-        id: voice.id,
-        name: voice.name,
-        // File objects can't be serialized, we'll handle them separately
-      }))
-    };
-    localStorage.setItem('voice-qa-settings', JSON.stringify(settingsToStore));
+    // Save to localStorage
+    localStorage.setItem('voice-qa-settings', JSON.stringify(updatedSettings));
   };
 
   const speak = async (text: string): Promise<void> => {
     if (!text.trim()) return;
 
-    switch (settings.provider) {
-      case 'browser':
-        return speakWithBrowser(text, settings.selectedVoice);
+    console.log('Speaking with voice:', settings.selectedVoice);
+
+    try {
+      // Import API service dynamically to avoid circular dependency
+      const { apiService } = await import('../services/api');
       
-      case 'elevenlabs':
-        if (!settings.elevenLabsApiKey) {
-          throw new Error('ElevenLabs API key not configured');
-        }
-        return speakWithElevenLabs(text, settings.selectedVoice, settings.elevenLabsApiKey);
+      // Always use the selected voice for TTS
+      const response = await apiService.textToSpeech(text, settings.selectedVoice);
       
-      case 'custom':
-        const customVoice = settings.customVoices.find(v => v.id === settings.selectedVoice);
-        if (!customVoice) {
-          throw new Error('Custom voice not found');
-        }
-        return speakWithCustomVoice(text, customVoice);
-      
-      default:
-        throw new Error('Invalid voice provider');
+      if (response.audio_url) {
+        // Play the generated audio from backend with cache busting
+        const audio = new Audio();
+        
+        // Prevent caching
+        audio.preload = 'none';
+        audio.crossOrigin = 'anonymous';
+        
+        // Cache bust the URL
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(7);
+        const cacheBustUrl = response.audio_url.includes('?') 
+          ? `${response.audio_url}&cb=${timestamp}&r=${random}`
+          : `${response.audio_url}?cb=${timestamp}&r=${random}`;
+        
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Audio load timeout')), 10000);
+          
+          audio.onended = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          
+          audio.oncanplaythrough = () => {
+            clearTimeout(timeout);
+            audio.play().then(() => {
+              // Audio started playing successfully
+            }).catch(reject);
+          };
+          
+          audio.onerror = () => {
+            clearTimeout(timeout);
+            reject(new Error('Failed to play audio'));
+          };
+          
+          audio.src = cacheBustUrl;
+          audio.load();
+        });
+      } else {
+        // Fallback to browser TTS if no audio URL
+        console.warn('No audio URL returned, using browser TTS fallback');
+        return speakWithBrowser(text);
+      }
+    } catch (error) {
+      // Fallback to browser TTS if backend fails
+      console.warn('Backend TTS failed, falling back to browser TTS:', error);
+      return speakWithBrowser(text);
     }
   };
 
@@ -107,77 +127,14 @@ export function useVoice() {
   return context;
 }
 
-// Helper functions
-async function speakWithBrowser(text: string, voiceName?: string): Promise<void> {
+// Helper function for browser TTS fallback
+async function speakWithBrowser(text: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const utterance = new SpeechSynthesisUtterance(text);
-    
-    if (voiceName) {
-      const voices = speechSynthesis.getVoices();
-      const voice = voices.find(v => v.name === voiceName);
-      if (voice) {
-        utterance.voice = voice;
-      }
-    }
     
     utterance.onend = () => resolve();
     utterance.onerror = (event) => reject(new Error(`Speech synthesis failed: ${event.error}`));
     
     speechSynthesis.speak(utterance);
-  });
-}
-
-async function speakWithElevenLabs(text: string, voiceId: string, apiKey: string): Promise<void> {
-  try {
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'audio/mpeg',
-        'Content-Type': 'application/json',
-        'xi-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        text,
-        model_id: 'eleven_monolingual_v1',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.5,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`ElevenLabs API error: ${response.statusText}`);
-    }
-
-    const audioBlob = await response.blob();
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    
-    return new Promise((resolve, reject) => {
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        resolve();
-      };
-      audio.onerror = () => {
-        URL.revokeObjectURL(audioUrl);
-        reject(new Error('Failed to play ElevenLabs audio'));
-      };
-      audio.play().catch(reject);
-    });
-  } catch (error) {
-    throw new Error(`ElevenLabs TTS failed: ${error.message}`);
-  }
-}
-
-async function speakWithCustomVoice(text: string, customVoice: any): Promise<void> {
-  // For custom voices, we just play the uploaded audio file
-  // In a real implementation, you might use a TTS service that can clone voices
-  const audio = new Audio(customVoice.url);
-  
-  return new Promise((resolve, reject) => {
-    audio.onended = () => resolve();
-    audio.onerror = () => reject(new Error('Failed to play custom voice'));
-    audio.play().catch(reject);
   });
 }

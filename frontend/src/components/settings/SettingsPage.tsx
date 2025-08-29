@@ -1,70 +1,131 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useVoice } from '../../contexts/VoiceContext';
 import {
-  MicrophoneIcon,
-  CloudIcon,
-  MusicalNoteIcon,
-  DocumentArrowUpIcon,
   PlayIcon,
-  StopIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { LoadingSpinner } from '../LoadingSpinner';
+import { apiService } from '../../services/api';
 import toast from 'react-hot-toast';
 
 export function SettingsPage() {
-  const { settings, updateSettings, speak } = useVoice();
+  const { settings, updateSettings } = useVoice();
   const [isTestingVoice, setIsTestingVoice] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [voices, setVoices] = useState<{ id: string; name: string; preview_url?: string; description?: string }[]>([]);
+  const [loadingVoices, setLoadingVoices] = useState(true);
 
-  const elevenLabsVoices = [
-    { id: 'rachel', name: 'Rachel - Calm' },
-    { id: 'domi', name: 'Domi - Strong' },
-    { id: 'bella', name: 'Bella - Narration' },
-    { id: 'antoni', name: 'Antoni - Well-rounded' },
-    { id: 'elli', name: 'Elli - Emotional' },
-    { id: 'josh', name: 'Josh - Deep' },
-    { id: 'arnold', name: 'Arnold - Crisp' },
-    { id: 'adam', name: 'Adam - Conversational' },
-    { id: 'sam', name: 'Sam - Raspy' },
-  ];
+  useEffect(() => {
+    loadVoices();
+  }, []);
 
-  const handleCustomVoiceUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('audio/')) {
-      const customVoice = {
-        id: Date.now().toString(),
-        name: file.name.replace(/\.[^/.]+$/, ''),
-        file,
-        url: URL.createObjectURL(file),
-      };
-      updateSettings({
-        customVoices: [...settings.customVoices, customVoice]
-      });
-      toast.success('Custom voice uploaded successfully');
+  const loadVoices = async () => {
+    try {
+      setLoadingVoices(true);
+      const response = await apiService.getVoices();
+      setVoices(response.voices);
+    } catch (error) {
+      console.error('Failed to load voices:', error);
+      toast.error('Failed to load available voices');
+    } finally {
+      setLoadingVoices(false);
     }
-  };
-
-  const removeCustomVoice = (id: string) => {
-    const voice = settings.customVoices.find(v => v.id === id);
-    if (voice) {
-      URL.revokeObjectURL(voice.url);
-    }
-    updateSettings({
-      customVoices: settings.customVoices.filter(v => v.id !== id)
-    });
-    toast.success('Custom voice removed');
   };
 
   const testVoice = async () => {
+    if (!settings.selectedVoice) {
+      toast.error('Please select a voice first');
+      return;
+    }
+
     setIsTestingVoice(true);
-    const testText = "Hello! This is a test of the selected voice. How does it sound?";
+    
+    // Get voice info
+    const selectedVoice = voices.find(v => v.id === settings.selectedVoice);
+    const voiceName = selectedVoice?.name?.split(' - ')[0] || 'Unknown';
     
     try {
-      await speak(testText);
-      toast.success('Voice test completed');
-    } catch (error) {
-      toast.error(`Voice test failed: ${error.message}`);
+      console.log('=== VOICE TEST DEBUG ===');
+      console.log('Selected voice ID:', settings.selectedVoice);
+      console.log('Voice name:', voiceName);
+      
+      // Use preview URL if available (works exactly like preview button)
+      if (selectedVoice?.preview_url) {
+        console.log('Using preview URL:', selectedVoice.preview_url);
+        
+        const audio = new Audio();
+        
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Audio load timeout')), 10000);
+          
+          audio.oncanplaythrough = () => {
+            clearTimeout(timeout);
+            audio.play().then(resolve).catch(reject);
+          };
+          
+          audio.onended = () => {
+            clearTimeout(timeout);
+            resolve(true);
+          };
+          
+          audio.onerror = (e) => {
+            clearTimeout(timeout);
+            console.error('Audio error:', e);
+            reject(new Error('Failed to load preview audio'));
+          };
+          
+          audio.src = selectedVoice.preview_url;
+        });
+        
+        toast.success(`Voice test completed with ${voiceName} (Preview)`);
+      } else {
+        // Fallback to generated TTS if no preview URL
+        const testText = `Hello! I'm ${voiceName}. This is how I sound for voice responses.`;
+        console.log('No preview URL, generating TTS with text:', testText);
+        
+        const response = await apiService.textToSpeech(testText, settings.selectedVoice);
+        
+        if (response.audio_url) {
+          const audio = new Audio();
+          audio.preload = 'none';
+          audio.crossOrigin = 'anonymous';
+          
+          const timestamp = Date.now();
+          const random = Math.random().toString(36).substring(7);
+          const cacheBustUrl = response.audio_url.includes('?') 
+            ? `${response.audio_url}&cb=${timestamp}&r=${random}&v=${settings.selectedVoice}`
+            : `${response.audio_url}?cb=${timestamp}&r=${random}&v=${settings.selectedVoice}`;
+          
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Audio load timeout')), 10000);
+            
+            audio.oncanplaythrough = () => {
+              clearTimeout(timeout);
+              audio.play().then(resolve).catch(reject);
+            };
+            
+            audio.onended = () => {
+              clearTimeout(timeout);
+              resolve(true);
+            };
+            
+            audio.onerror = (e) => {
+              clearTimeout(timeout);
+              reject(new Error('Failed to load generated audio'));
+            };
+            
+            audio.src = cacheBustUrl;
+            audio.load();
+          });
+          
+          toast.success(`Voice test completed with ${voiceName} (Generated)`);
+        } else {
+          throw new Error('No audio generated');
+        }
+      }
+    } catch (error: any) {
+      console.error('Voice test error:', error);
+      toast.error(`Voice test failed: ${error.message || 'Unknown error'}`);
     } finally {
       setTimeout(() => setIsTestingVoice(false), 2000);
     }
@@ -90,206 +151,100 @@ export function SettingsPage() {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Voice Settings</h2>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Configure your preferred voice provider and settings
+          Configure your ElevenLabs voice preferences
         </p>
       </div>
 
-      {/* Voice Provider Selection */}
+      {/* ElevenLabs Voice Selection */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Voice Provider
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Browser TTS */}
-          <div
-            onClick={() => updateSettings({ provider: 'browser' })}
-            className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-              settings.provider === 'browser'
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              <MicrophoneIcon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white">Browser TTS</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Built-in browser voices</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ElevenLabs */}
-          <div
-            onClick={() => updateSettings({ provider: 'elevenlabs' })}
-            className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-              settings.provider === 'elevenlabs'
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              <CloudIcon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white">ElevenLabs</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">High-quality AI voices</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Custom Voices */}
-          <div
-            onClick={() => updateSettings({ provider: 'custom' })}
-            className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-              settings.provider === 'custom'
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              <MusicalNoteIcon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white">Custom Voices</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Upload your own recordings</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Provider-specific Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Voice Configuration
+          Select ElevenLabs Voice
         </h3>
 
-        {settings.provider === 'browser' && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Voice
-              </label>
+        {loadingVoices ? (
+          <div className="flex items-center justify-center py-8">
+            <LoadingSpinner size="md" />
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Loading voices...</span>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Available Voices
+            </label>
+            <div className="space-y-3">
               <select
                 value={settings.selectedVoice}
-                onChange={(e) => updateSettings({ selectedVoice: e.target.value })}
+                onChange={(e) => {
+                  updateSettings({ selectedVoice: e.target.value, provider: 'elevenlabs' });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Select a voice...</option>
-                {speechSynthesis.getVoices().map((voice) => (
-                  <option key={voice.name} value={voice.name}>
-                    {voice.name} ({voice.lang})
+                {voices.map((voice) => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.name}
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
-        )}
-
-        {settings.provider === 'elevenlabs' && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                API Key
-              </label>
-              <input
-                type="password"
-                value={settings.elevenLabsApiKey}
-                onChange={(e) => updateSettings({ elevenLabsApiKey: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                placeholder="Enter your ElevenLabs API key"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Get your API key from{' '}
-                <a href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer" className="text-primary-600 dark:text-primary-400 hover:underline">
-                  ElevenLabs
-                </a>
-              </p>
+              
+              {/* Voice Description */}
+              {settings.selectedVoice && voices.find(v => v.id === settings.selectedVoice) && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        {voices.find(v => v.id === settings.selectedVoice)?.name}
+                      </p>
+                      {voices.find(v => v.id === settings.selectedVoice)?.description && (
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                          {voices.find(v => v.id === settings.selectedVoice)?.description}
+                        </p>
+                      )}
+                    </div>
+                    {/* Preview Button */}
+                    {voices.find(v => v.id === settings.selectedVoice)?.preview_url && (
+                      <button
+                        onClick={() => {
+                          const previewUrl = voices.find(v => v.id === settings.selectedVoice)?.preview_url;
+                          if (previewUrl) {
+                            const audio = new Audio(previewUrl);
+                            audio.play().catch(e => console.error('Preview failed:', e));
+                          }
+                        }}
+                        className="ml-2 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                      >
+                        🎵 Preview
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             
-            {settings.elevenLabsApiKey && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Voice
-                </label>
-                <select
-                  value={settings.selectedVoice}
-                  onChange={(e) => updateSettings({ selectedVoice: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">Select a voice...</option>
-                  {elevenLabsVoices.map((voice) => (
-                    <option key={voice.id} value={voice.id}>
-                      {voice.name}
-                    </option>
-                  ))}
-                </select>
+            {voices.length === 0 && !loadingVoices && (
+              <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 font-medium mb-2">
+                  ElevenLabs API not configured
+                </p>
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                  To use ElevenLabs voices, add your API key to the server's <code className="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">.env</code> file:
+                </p>
+                <code className="block text-xs bg-yellow-100 dark:bg-yellow-800 p-2 rounded mt-2 text-yellow-800 dark:text-yellow-200">
+                  ELEVENLABS_API_KEY=your_api_key_here<br/>
+                  USE_ELEVENLABS=true
+                </code>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+                  Voice testing will fall back to browser TTS until configured.
+                </p>
               </div>
             )}
-          </div>
-        )}
-
-        {settings.provider === 'custom' && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Upload Custom Voice
-              </label>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
-                <input
-                  type="file"
-                  accept="audio/*"
-                  onChange={handleCustomVoiceUpload}
-                  className="hidden"
-                  id="voice-upload"
-                />
-                <label
-                  htmlFor="voice-upload"
-                  className="flex flex-col items-center cursor-pointer"
-                >
-                  <DocumentArrowUpIcon className="h-12 w-12 text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Click to upload audio file
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                    Supports MP3, WAV, M4A formats
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            {settings.customVoices.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Custom Voice
-                </label>
-                <div className="space-y-2">
-                  {settings.customVoices.map((voice) => (
-                    <div
-                      key={voice.id}
-                      className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer ${
-                        settings.selectedVoice === voice.id
-                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-gray-700'
-                      }`}
-                      onClick={() => updateSettings({ selectedVoice: voice.id })}
-                    >
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {voice.name}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeCustomVoice(voice.id);
-                        }}
-                        className="text-red-500 hover:text-red-700 text-sm"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            
+            <button
+              onClick={loadVoices}
+              className="mt-2 text-sm text-primary-600 dark:text-primary-400 hover:underline"
+            >
+              Refresh voices
+            </button>
           </div>
         )}
       </div>
