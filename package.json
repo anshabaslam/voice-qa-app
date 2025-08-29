@@ -1,0 +1,30 @@
+{
+  "name": "voice-qa-app",
+  "version": "1.0.0",
+  "description": "Voice-Driven Q&A Application with React and FastAPI",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "cd backend && pip install -r requirements.txt && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "test": "cd backend && pytest && cd ../frontend && npm test",
+    "lint": "cd backend && black . && isort . && cd ../frontend && npm run lint",
+    "docker:dev": "docker-compose up --build",
+    "docker:prod": "docker-compose -f docker-compose.prod.yml up -d"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "keywords": [
+    "voice",
+    "qa",
+    "ai",
+    "react",
+    "fastapi",
+    "typescript",
+    "python"
+  ],
+  "author": "Voice Q&A Team",
+  "license": "MIT"
+}
