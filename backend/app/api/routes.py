@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from typing import List
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 from app.models.schemas import (
     LinkInput, ExtractionResponse, QuestionInput, 
     AnswerResponse, TTSRequest, TTSResponse, HealthCheck
@@ -55,13 +58,16 @@ async def ask_question(question_input: QuestionInput):
 @router.post("/tts", response_model=TTSResponse)
 async def text_to_speech(tts_request: TTSRequest):
     try:
+        logger.info(f"📨 TTS API Request: text_length={len(tts_request.text)}, voice_id='{tts_request.voice_id}'")
         tts_service = TTSService()
         result = await tts_service.generate_speech(
             tts_request.text,
             voice_id=tts_request.voice_id
         )
+        logger.info(f"📤 TTS API Response: audio_url='{result.audio_url[:50]}...' duration={result.duration}")
         return result
     except Exception as e:
+        logger.error(f"❌ TTS API Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"TTS generation failed: {str(e)}")
 
 @router.post("/upload-audio")

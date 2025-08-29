@@ -101,6 +101,10 @@ class TTSService:
             logger.warning(f"Could not get voice settings for {voice_id}: {e}")
         
         try:
+            print(f"🚀 Making ElevenLabs API call to /v1/text-to-speech/{voice_id}")
+            print(f"   - Model: {model_id}")
+            print(f"   - Settings: {voice_settings}")
+            
             response = await self.elevenlabs_client.post(
                 f"/v1/text-to-speech/{voice_id}",
                 json={
@@ -115,7 +119,9 @@ class TTSService:
                 }
             )
             
+            print(f"📡 ElevenLabs API Response Status: {response.status_code}")
             if response.status_code != 200:
+                print(f"❌ ElevenLabs API Error Response: {response.text}")
                 raise Exception(f"ElevenLabs API error: {response.status_code}")
             
             # Save audio file with timestamp for cache busting
@@ -176,85 +182,91 @@ class TTSService:
     async def get_available_voices(self) -> list:
         if self.elevenlabs_client:
             try:
-                # Use v2 API for richer voice metadata  
-                response = await self.elevenlabs_client.get("/v2/voices")
+                # Use v1 API first as it's more reliable
+                logger.info("Trying ElevenLabs v1 voices API...")
+                response = await self.elevenlabs_client.get("/v1/voices")
                 if response.status_code == 200:
                     data = response.json()
-                    
                     voices = []
                     for voice in data.get("voices", []):
-                        voice_id = voice["voice_id"]
-                        name = voice["name"]
-                        
-                        # Extract rich metadata from labels
-                        labels = voice.get("labels", {})
-                        description = voice.get("description", "")
-                        
-                        # Build descriptive name from metadata
-                        gender = labels.get("gender", "").title()
-                        accent = labels.get("accent", "").title()
-                        age = labels.get("age", "")
-                        descriptive = labels.get("descriptive", "")
-                        use_case = labels.get("use_case", "")
-                        
-                        # Create rich description
-                        parts = [name]
-                        if gender:
-                            parts.append(gender)
-                        if age:
-                            parts.append(age.title())
-                        if accent and accent != "American":
-                            parts.append(f"({accent})")
-                        if descriptive:
-                            parts.append(f"- {descriptive.title()}")
-                        elif use_case:
-                            parts.append(f"- {use_case.title()}")
-                        
-                        display_name = " ".join(parts)
-                        
                         voices.append({
-                            "id": voice_id,
-                            "name": display_name,
-                            "description": description,
-                            "preview_url": voice.get("preview_url"),
-                            "labels": labels,
-                            "settings": voice.get("settings", {}),
-                            "category": voice.get("category", "")
+                            "id": voice["voice_id"], 
+                            "name": voice["name"],
+                            "preview_url": voice.get("preview_url")
                         })
                     
-                    # Sort by gender (female first), then by age, then by name
-                    voices.sort(key=lambda v: (
-                        0 if v["labels"].get("gender") == "female" else 1,
-                        {"young": 0, "middle-aged": 1, "old": 2}.get(v["labels"].get("age", ""), 3),
-                        v["name"]
-                    ))
-                    
-                    return voices
+                    if voices:
+                        logger.info(f"Successfully loaded {len(voices)} ElevenLabs voices")
+                        return voices
                     
             except Exception as e:
-                logger.error(f"Failed to get ElevenLabs v2 voices: {e}")
+                logger.error(f"Failed to get ElevenLabs v1 voices: {e}")
                 
-                # Fallback to v1 API
+                # Try v2 API as backup
                 try:
-                    response = await self.elevenlabs_client.get("/voices")
+                    logger.info("Trying ElevenLabs v2 voices API as backup...")
+                    response = await self.elevenlabs_client.get("/v2/voices")
                     if response.status_code == 200:
                         data = response.json()
-                        return [
-                            {"id": voice["voice_id"], "name": voice["name"]}
-                            for voice in data.get("voices", [])
-                        ]
+                        
+                        voices = []
+                        for voice in data.get("voices", []):
+                            voice_id = voice["voice_id"]
+                            name = voice["name"]
+                            
+                            # Extract rich metadata from labels
+                            labels = voice.get("labels", {})
+                            description = voice.get("description", "")
+                            
+                            # Build descriptive name from metadata
+                            gender = labels.get("gender", "").title()
+                            accent = labels.get("accent", "").title()
+                            age = labels.get("age", "")
+                            descriptive = labels.get("descriptive", "")
+                            use_case = labels.get("use_case", "")
+                            
+                            # Create rich description
+                            parts = [name]
+                            if gender:
+                                parts.append(gender)
+                            if age:
+                                parts.append(age.title())
+                            if accent and accent != "American":
+                                parts.append(f"({accent})")
+                            if descriptive:
+                                parts.append(f"- {descriptive.title()}")
+                            elif use_case:
+                                parts.append(f"- {use_case.title()}")
+                            
+                            display_name = " ".join(parts)
+                            
+                            voices.append({
+                                "id": voice_id,
+                                "name": display_name,
+                                "description": description,
+                                "preview_url": voice.get("preview_url"),
+                                "labels": labels,
+                                "settings": voice.get("settings", {}),
+                                "category": voice.get("category", "")
+                            })
+                        
+                        # Sort by gender (female first), then by age, then by name
+                        voices.sort(key=lambda v: (
+                            0 if v.get("labels", {}).get("gender") == "female" else 1,
+                            {"young": 0, "middle-aged": 1, "old": 2}.get(v.get("labels", {}).get("age", ""), 3),
+                            v["name"]
+                        ))
+                        
+                        if voices:
+                            logger.info(f"Successfully loaded {len(voices)} ElevenLabs voices from v2 API")
+                            return voices
+                        
                 except Exception as e2:
-                    logger.error(f"Failed to get ElevenLabs v1 voices: {e2}")
+                    logger.error(f"Failed to get ElevenLabs v2 voices: {e2}")
         
-        # OpenAI TTS voices fallback
-        return [
-            {"id": "nova", "name": "Nova - Female (OpenAI)"},
-            {"id": "shimmer", "name": "Shimmer - Female (OpenAI)"},
-            {"id": "alloy", "name": "Alloy - Male (OpenAI)"},
-            {"id": "echo", "name": "Echo - Male (OpenAI)"},
-            {"id": "fable", "name": "Fable - Male (OpenAI)"},
-            {"id": "onyx", "name": "Onyx - Male (OpenAI)"}
-        ]
+        # If ElevenLabs is not configured or failed, return empty list instead of OpenAI voices
+        logger.warning("ElevenLabs voices unavailable - returning empty list")
+        return []
     
     async def close(self):
         if self.elevenlabs_client:
