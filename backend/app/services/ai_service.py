@@ -51,32 +51,50 @@ class AIService:
                 logger.warning(f"Redis connection failed: {e}")
     
     async def answer_question(self, question: str, session_id: Optional[str] = None) -> AnswerResponse:
+        logger.info(f"📝 AI Service: Answering question for session {session_id}")
+        logger.info(f"   - Question: {question[:100]}...")
+        
         if not session_id:
             session_id = str(uuid.uuid4())
         
         # Get context from previous extractions
         context = await self._get_context(session_id)
+        logger.info(f"   - Context items: {len(context) if context else 0}")
         
         if not context:
+            logger.error("No context available for session")
             raise ValueError("No content available. Please extract content from URLs first.")
+        
+        # Log which services are available
+        logger.info(f"   - OpenAI available: {self.openai_client is not None}")
+        logger.info(f"   - Anthropic available: {self.anthropic_client is not None}")
         
         # Try different AI services in order of preference
         try:
             # Try paid services first if available
             if self.openai_client:
+                logger.info("🤖 Using OpenAI GPT service")
                 answer, sources = await self._answer_with_openai(question, context)
             elif self.anthropic_client:
+                logger.info("🤖 Using Anthropic Claude service")
                 answer, sources = await self._answer_with_anthropic(question, context)
             else:
                 # Use free AI service as fallback
-                logger.info("Using free AI service")
+                logger.info("🆓 Using free AI service")
                 result = await self.free_ai_service.answer_question(question, context, session_id)
                 answer, sources = result.answer, result.sources
         
         except Exception as e:
-            logger.warning(f"Primary AI service failed: {e}, falling back to free AI")
-            result = await self.free_ai_service.answer_question(question, context, session_id)
-            answer, sources = result.answer, result.sources
+            logger.error(f"❌ Primary AI service failed: {e}")
+            logger.info("🆓 Falling back to free AI service")
+            try:
+                result = await self.free_ai_service.answer_question(question, context, session_id)
+                answer, sources = result.answer, result.sources
+            except Exception as e2:
+                logger.error(f"❌ Free AI service also failed: {e2}")
+                raise ValueError(f"All AI services failed. Error: {str(e2)}")
+        
+        logger.info(f"✅ Generated answer (length: {len(answer)} chars)")
         
         # Store the Q&A in session
         await self._store_qa(session_id, question, answer)
@@ -96,10 +114,18 @@ class AIService:
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful assistant that answers questions based on provided web content. 
-                    Use the given context to answer questions accurately and concisely. 
-                    If the answer cannot be found in the context, clearly state that.
-                    Always cite which sources you used to answer the question."""
+                    "content": """You are an expert researcher and writer who provides comprehensive, accurate answers based on web content.
+
+                    INSTRUCTIONS:
+                    1. Provide complete, detailed answers using the full context provided
+                    2. Write in clear, well-structured paragraphs with proper formatting
+                    3. Include specific facts, dates, names, and details from the sources
+                    4. If information is incomplete, clearly state what is missing
+                    5. Only use information directly found in the provided context
+                    6. Structure your answer logically with clear explanations
+                    7. Be comprehensive - don't truncate important information
+                    
+                    FORMAT: Provide a detailed, well-formatted answer that fully addresses the question."""
                 },
                 {
                     "role": "user",
@@ -110,7 +136,7 @@ class AIService:
             response = await self.openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages,
-                max_tokens=500,
+                max_tokens=1500,  # Increased for fuller answers
                 temperature=0.7
             )
             
@@ -127,21 +153,27 @@ class AIService:
         try:
             context_text = self._prepare_context(context)
             
-            prompt = f"""You are a helpful assistant that answers questions based on provided web content. 
-            Use the given context to answer questions accurately and concisely. 
-            If the answer cannot be found in the context, clearly state that.
-            Always cite which sources you used to answer the question.
+            prompt = f"""You are an expert researcher and writer who provides comprehensive, accurate answers based on web content.
+
+            INSTRUCTIONS:
+            1. Provide complete, detailed answers using the full context provided
+            2. Write in clear, well-structured paragraphs with proper formatting
+            3. Include specific facts, dates, names, and details from the sources
+            4. If information is incomplete, clearly state what is missing
+            5. Only use information directly found in the provided context
+            6. Structure your answer logically with clear explanations
+            7. Be comprehensive - don't truncate important information
 
             Context:
             {context_text}
 
             Question: {question}
 
-            Please provide a clear, accurate answer based on the context above."""
+            Please provide a detailed, well-formatted answer that fully addresses the question based on the context above."""
             
             response = await self.anthropic_client.messages.create(
                 model="claude-3-sonnet-20240229",
-                max_tokens=500,
+                max_tokens=1500,  # Increased for fuller answers
                 messages=[{"role": "user", "content": prompt}]
             )
             
@@ -157,7 +189,11 @@ class AIService:
     def _prepare_context(self, context: List[Dict]) -> str:
         context_parts = []
         for i, item in enumerate(context, 1):
-            context_parts.append(f"Source {i} ({item['url']}):\nTitle: {item['title']}\nContent: {item['content'][:1000]}...\n")
+            # Use much more content for comprehensive analysis (up to 8000 chars per source)
+            content = item['content'][:8000]  # Significantly increased
+            if len(item['content']) > 8000:
+                content += "..."
+            context_parts.append(f"Source {i} ({item['url']}):\nTitle: {item['title']}\nContent: {content}\n")
         return "\n".join(context_parts)
     
     async def transcribe_audio(self, audio_file: UploadFile) -> str:

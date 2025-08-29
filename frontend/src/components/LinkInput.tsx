@@ -44,19 +44,35 @@ export const LinkInput: React.FC = () => {
     try {
       const result = await apiService.extractContent(validUrls);
       
-      if (!result.success) {
-        throw new Error('Failed to extract content from URLs');
+      if (!result.success || result.extracted_content.filter(c => c.success).length === 0) {
+        // Show specific error messages for failed extractions
+        const failedExtractions = result.extracted_content.filter(c => !c.success);
+        if (failedExtractions.length > 0) {
+          failedExtractions.forEach(extraction => {
+            if (extraction.error_message) {
+              toast.error(`${extraction.url}: ${extraction.error_message}`, { duration: 6000 });
+            }
+          });
+        }
+        throw new Error('No content could be extracted from any of the provided URLs. Please check that the URLs are accessible and contain readable content.');
       }
 
+      const successfulExtractions = result.extracted_content.filter(c => c.success);
       setExtractedContent(result.extracted_content);
       if (result.session_id) {
         setSessionId(result.session_id);
       }
       
-      toast.success(`Successfully extracted content from ${result.extracted_content.length} URLs`);
+      toast.success(`Successfully extracted content from ${successfulExtractions.length} URLs`);
       
-      if (result.failed_urls.length > 0) {
-        toast.error(`Failed to extract from ${result.failed_urls.length} URLs`);
+      // Show detailed errors for failed URLs
+      const failedExtractions = result.extracted_content.filter(c => !c.success);
+      if (failedExtractions.length > 0) {
+        failedExtractions.forEach(extraction => {
+          if (extraction.error_message) {
+            toast.error(`${extraction.url}: ${extraction.error_message}`, { duration: 8000 });
+          }
+        });
       }
       
     } catch (error) {
