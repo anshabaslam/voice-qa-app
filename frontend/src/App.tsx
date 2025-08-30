@@ -7,14 +7,13 @@ import { VoiceProvider } from './contexts/VoiceContext';
 import { useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { DashboardLayout } from './components/layout/DashboardLayout';
-import { DashboardPage } from './components/dashboard/DashboardPage';
 import { VoiceQAPage } from './components/VoiceQAPage';
 import { AnalyticsPage } from './components/analytics/AnalyticsPage';
 import { SettingsPage } from './components/settings/SettingsPage';
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('voice-qa');
 
   useEffect(() => {
     // Check API health on startup
@@ -27,8 +26,6 @@ function AppContent() {
 
   const renderCurrentPage = () => {
     switch (currentPage) {
-      case 'dashboard':
-        return <DashboardPage />;
       case 'voice-qa':
         return <VoiceQAPage />;
       case 'analytics':
@@ -36,7 +33,7 @@ function AppContent() {
       case 'settings':
         return <SettingsPage />;
       default:
-        return <DashboardPage />;
+        return <VoiceQAPage />;
     }
   };
 

@@ -4,7 +4,6 @@ import { useTheme } from '../../contexts/ThemeContext';
 import {
   MicrophoneIcon,
   Cog6ToothIcon,
-  HomeIcon,
   ChartBarIcon,
   ArrowLeftOnRectangleIcon,
   SunIcon,
@@ -17,7 +16,6 @@ import {
 import { 
   MicrophoneIcon as MicrophoneIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
-  HomeIcon as HomeIconSolid,
   ChartBarIcon as ChartBarIconSolid,
 } from '@heroicons/react/24/solid';
 import logoLight from '../../assets/logo-black.png';
@@ -36,12 +34,6 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
   const { theme, toggleTheme } = useTheme();
 
   const navigation = [
-    {
-      name: 'Dashboard',
-      id: 'dashboard',
-      icon: HomeIcon,
-      iconSolid: HomeIconSolid,
-    },
     {
       name: 'Voice Q&A',
       id: 'voice-qa',
