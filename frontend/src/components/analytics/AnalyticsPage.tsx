@@ -307,45 +307,73 @@ const WelcomeBanner = () => {
   );
 };
 
-// Top Questions Component
-const TopQuestions = () => {
-  const questions = [
-    { question: "How do React hooks work?", count: 23, category: "React" },
-    { question: "What is TypeScript?", count: 18, category: "TypeScript" },
-    { question: "Explain async/await in JavaScript", count: 15, category: "JavaScript" },
-    { question: "How to optimize React performance?", count: 12, category: "React" },
-    { question: "What are the benefits of TailwindCSS?", count: 9, category: "CSS" },
-  ];
+// Current Rating Component
+const CurrentRating = () => {
+  const chartConfig = {
+    series: [85],
+    options: {
+      colors: ["#10B981"],
+      chart: {
+        type: "radialBar" as const,
+        toolbar: {
+          show: false,
+        },
+        sparkline: {
+          enabled: false,
+        },
+      },
+      plotOptions: {
+        radialBar: {
+          startAngle: 0,
+          endAngle: 360,
+          track: {
+            background: "#22C55E40",
+            strokeWidth: "100%",
+            margin: 0,
+          },
+          dataLabels: {
+            name: {
+              show: false,
+            },
+            value: {
+              show: true,
+              fontSize: "14px",
+              fontWeight: "bold",
+              color: "#FFFFFF",
+              offsetY: 0,
+              formatter: function (val: number) {
+                return val + "%";
+              },
+            },
+          },
+          hollow: {
+            size: "70%",
+            background: "transparent",
+          },
+        },
+      },
+      stroke: {
+        lineCap: "round" as const,
+      },
+    },
+  };
 
   return (
     <div className="border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 dark:text-white">
-          Top Questions
-        </h3>
-        <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-          View All
-        </button>
-      </div>
-      
-      <div className="space-y-4">
-        {questions.map((item, index) => (
-          <div key={index} className="flex items-center justify-between py-2">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                {item.question}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {item.category}
-              </p>
-            </div>
-            <div className="ml-4 flex items-center gap-2">
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200">
-                {item.count}x
-              </span>
-            </div>
-          </div>
-        ))}
+      <div className="flex items-center gap-4">
+        <div className="w-20 h-20 relative">
+          <Chart
+            options={chartConfig.options}
+            series={chartConfig.series}
+            type="radialBar"
+            height="80"
+            width="80"
+          />
+        </div>
+        <div>
+          <div className="text-gray-900 dark:text-white text-sm">Current</div>
+          <div className="text-gray-900 dark:text-white text-sm">Rating</div>
+        </div>
       </div>
     </div>
   );
@@ -478,7 +506,7 @@ export function AnalyticsPage() {
             <AreaChart />
           </div>
 
-          <TopQuestions />
+          <CurrentRating />
 
           <div className="border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">

@@ -196,7 +196,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   size={32}
                   src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
                   alt={user?.name || "User"}
-                  className="mask is-diamond rounded-none"
+                  className="mask-scalloped rounded-none"
                 />
               </button>
 
