@@ -15,71 +15,89 @@ const ActivityChart = () => {
   const chartConfig = {
     series: [
       {
-        name: "Voice Questions",
-        data: [200, 100, 300, 200, 400, 300, 500],
+        name: "Revenue",
+        data: [44, 55, 57, 56, 61, 58, 63],
+      },
+      {
+        name: "Profit",
+        data: [76, 85, 101, 98, 87, 105, 91],
+      },
+      {
+        name: "Expenses",
+        data: [35, 41, 36, 26, 45, 48, 52],
       },
     ],
     options: {
-      colors: ["#a855f7"],
+      colors: ["#3B82F6", "#10B981", "#F59E0B"],
       chart: {
         parentHeightOffset: 0,
         toolbar: {
           show: false,
         },
-        dropShadow: {
-          enabled: true,
-          color: "#1E202C",
-          top: 18,
-          left: 6,
-          blur: 8,
-          opacity: 0.1,
+      },
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: "55%",
+          endingShape: "rounded" as const,
+          borderRadius: 4,
         },
       },
+      dataLabels: {
+        enabled: false,
+      },
       stroke: {
-        width: 5,
-        curve: "smooth",
+        show: true,
+        width: 2,
+        colors: ["#3B82F6", "#10B981", "#F59E0B"],
       },
       xaxis: {
-        type: "datetime",
-        categories: [
-          "1/11/2024",
-          "2/11/2024",
-          "3/11/2024",
-          "4/11/2024",
-          "5/11/2024",
-          "6/11/2024",
-          "7/11/2024",
-        ],
-        tickAmount: 10,
+        categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
         labels: {
-          formatter: function (value: string, timestamp: number, opts: any) {
-            return opts.dateFormatter(new Date(timestamp), "dd MMM");
+          style: {
+            fontSize: "12px",
           },
+        },
+        axisBorder: {
+          show: true,
+          color: "#374151",
+        },
+        axisTicks: {
+          show: true,
+          color: "#374151",
         },
       },
       yaxis: {
+        title: {
+          text: "Amount ($)",
+        },
         labels: {
-          offsetX: -12,
-          offsetY: 0,
+          style: {
+            fontSize: "12px",
+          },
         },
       },
       fill: {
-        type: "gradient",
-        gradient: {
-          shade: "dark",
-          gradientToColors: ["#86efac"],
-          shadeIntensity: 1,
-          type: "horizontal",
-          opacityFrom: 1,
-          opacityTo: 0.95,
-          stops: [0, 100, 0, 100],
+        type: "solid",
+        opacity: 0.3,
+      },
+      tooltip: {
+        y: {
+          formatter: function (val: number) {
+            return "$" + val + "k";
+          },
         },
       },
+      legend: {
+        position: "top" as const,
+        horizontalAlign: "right" as const,
+        offsetY: -10,
+        fontSize: "12px",
+      },
       grid: {
-        padding: {
-          left: 0,
-          right: 0,
-        },
+        show: true,
+        strokeDashArray: 3,
+        borderColor: "#374151",
       },
     },
   };
@@ -88,13 +106,13 @@ const ActivityChart = () => {
     <div className="ax-transparent-gridline2">
       <div className="flex h-8 min-w-0 items-center justify-between">
         <h2 className="truncate font-medium tracking-wide text-gray-800 dark:text-dark-100">
-          Activity
+          Financial Overview
         </h2>
       </div>
       <Chart
         options={chartConfig.options}
         series={chartConfig.series}
-        type="line"
+        type="bar"
         height="270"
       />
     </div>
