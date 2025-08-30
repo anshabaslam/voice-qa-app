@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "apexcharts": "^5.3.4",
     "axios": "^1.6.0",
     "clsx": "^2.0.0",
     "lucide-react": "^0.542.0",
     "react": "^19.1.1",
+    "react-apexcharts": "^1.7.0",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.30.1",

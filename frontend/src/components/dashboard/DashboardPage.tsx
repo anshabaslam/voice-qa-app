@@ -33,7 +33,7 @@ export function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8">
       {/* Welcome Section */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back!</h2>
@@ -47,7 +47,7 @@ export function DashboardPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.name} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div key={stat.name} className="card">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <Icon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
@@ -80,7 +80,7 @@ export function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="card">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
         </div>
