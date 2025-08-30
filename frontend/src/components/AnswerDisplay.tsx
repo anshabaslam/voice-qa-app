@@ -77,10 +77,10 @@ export const AnswerDisplay: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Question Input */}
-      <div className="card p-6">
+      <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
         <div className="flex items-center mb-4">
-          <ChatBubbleLeftIcon className="h-6 w-6 text-primary-600 mr-2" />
-          <h2 className="text-xl font-semibold text-gray-900">Ask a Question</h2>
+          <ChatBubbleLeftIcon className="h-6 w-6 text-blue-600 mr-2" />
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Ask a Question</h2>
         </div>
         
         <div className="space-y-4">
@@ -107,9 +107,9 @@ export const AnswerDisplay: React.FC = () => {
 
       {/* Answer Display */}
       {currentAnswer && (
-        <div className="card p-6">
+        <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Answer</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Answer</h3>
             
             <div className="flex gap-2">
               <button
@@ -135,22 +135,22 @@ export const AnswerDisplay: React.FC = () => {
           </div>
           
           <div className="prose max-w-none">
-            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+            <p className="text-gray-800 dark:text-white leading-relaxed whitespace-pre-wrap">
               {currentAnswer.answer}
             </p>
           </div>
           
           {currentAnswer.sources.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Sources:</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sources:</h4>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 {currentAnswer.sources.map((source, index) => (
                   <li key={index}>
                     <a 
                       href={source} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 underline"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
                     >
                       {source}
                     </a>
@@ -161,14 +161,14 @@ export const AnswerDisplay: React.FC = () => {
           )}
           
           {currentAnswer.confidence && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>Confidence:</span>
                 <span>{Math.round(currentAnswer.confidence * 100)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
                 <div 
-                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${currentAnswer.confidence * 100}%` }}
                 />
               </div>

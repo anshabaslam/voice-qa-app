@@ -60,8 +60,9 @@ export const VoiceRecorder: React.FC = () => {
   };
 
   return (
-    <div className="card p-6">
+    <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
       <div className="text-center">
+
         <div className="mb-4">
           <button
             onClick={handleToggleRecording}
@@ -69,8 +70,8 @@ export const VoiceRecorder: React.FC = () => {
             className={clsx(
               'relative p-6 rounded-full transition-all duration-200 shadow-lg',
               isRecording
-                ? 'bg-voice-recording text-white hover:bg-red-600 animate-pulse'
-                : 'bg-primary-600 text-white hover:bg-primary-700',
+                ? 'bg-red-500 text-white hover:bg-red-600 animate-pulse'
+                : 'bg-blue-600 text-white hover:bg-blue-700',
               isProcessing && 'opacity-50 cursor-not-allowed'
             )}
           >
@@ -87,7 +88,7 @@ export const VoiceRecorder: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <p className="text-lg font-medium">
+          <p className="text-lg font-medium text-gray-900 dark:text-white">
             {isProcessing
               ? 'Processing...'
               : isRecording
@@ -96,13 +97,13 @@ export const VoiceRecorder: React.FC = () => {
           </p>
           
           {transcript && (
-            <div className="bg-gray-50 rounded-lg p-3 text-left">
-              <p className="text-sm text-gray-600 mb-1">Transcript:</p>
-              <p className="text-gray-900">{transcript}</p>
+            <div className="bg-gray-50 dark:bg-dark-700 rounded-lg p-3 text-left">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Transcript:</p>
+              <p className="text-gray-900 dark:text-white">{transcript}</p>
             </div>
           )}
           
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {isRecording
               ? 'Speak clearly and click stop when done'
               : 'Make sure you have extracted content first'}

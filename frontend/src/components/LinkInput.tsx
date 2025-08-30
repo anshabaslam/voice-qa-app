@@ -85,13 +85,13 @@ export const LinkInput: React.FC = () => {
   };
 
   return (
-    <div className="card p-6">
+    <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
       <div className="flex items-center mb-4">
-        <LinkIcon className="h-6 w-6 text-primary-600 mr-2" />
-        <h2 className="text-xl font-semibold text-gray-900">Content Sources</h2>
+        <LinkIcon className="h-6 w-6 text-blue-600 mr-2" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Content Sources</h2>
       </div>
       
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         Add at least 3 web links to extract content for Q&A (websites, Wikipedia, news articles, etc.)
       </p>
 
@@ -146,7 +146,7 @@ export const LinkInput: React.FC = () => {
       </button>
       
       {urls.filter(url => url.trim()).length < 3 && (
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
           Need at least 3 URLs to proceed
         </p>
       )}
