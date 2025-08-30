@@ -111,7 +111,7 @@ const AreaChart = () => {
   ];
 
   const chartConfig = {
-    colors: ["#FF9800"],
+    colors: ["#DC2626"],
     chart: {
       stacked: false,
       parentHeightOffset: 0,
@@ -123,6 +123,7 @@ const AreaChart = () => {
       enabled: false,
     },
     grid: {
+      show: false,
       padding: {
         left: 0,
         right: 0,
