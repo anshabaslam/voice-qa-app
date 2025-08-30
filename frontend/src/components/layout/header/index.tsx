@@ -110,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                            focus:bg-white/80 dark:focus:bg-dark-800/80
                            text-gray-900 dark:text-white 
                            placeholder-gray-400 dark:placeholder-dark-400
-                           transition-all duration-200 ease-out
+                           transition-all 150ms ease-in-out
                            hover:bg-white/70 dark:hover:bg-dark-800/70
                            hover:border-gray-300/60 dark:hover:border-dark-500/60"
                 />
@@ -121,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                                backdrop-blur-sm
                                px-2 py-1 rounded-md
                                border border-gray-200/50 dark:border-dark-500/50
-                               transition-all duration-200"
+                               transition-all 150ms ease-in-out"
                 >
                   /
                 </kbd>
@@ -144,7 +144,8 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg text-gray-500 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
+                className="p-2 rounded-lg text-gray-500 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700" 
+                style={{ transition: 'all 150ms ease-in-out' }}
                 title={isDark ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {isDark ? (
@@ -188,7 +189,8 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               <button
                 ref={avatarRef}
                 onClick={handleAvatarClick}
-                className="focus:outline-none outline-none rounded-lg transition-all duration-200 hover:scale-105"
+                className="focus:outline-none outline-none rounded-lg hover:scale-105"
+                style={{ transition: 'all 150ms ease-in-out' }}
               >
                 <Avatar
                   size={32}

@@ -26,19 +26,23 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200;
+    @apply bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5;
+    transition: all 150ms ease-in-out !important;
   }
 
   .btn-secondary {
-    @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium py-3 px-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200;
+    @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium py-3 px-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5;
+    transition: all 150ms ease-in-out !important;
   }
 
   .card {
-    @apply glass-effect rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300;
+    @apply glass-effect rounded-2xl p-6 shadow-xl hover:shadow-2xl;
+    transition: all 150ms ease-in-out !important;
   }
 
   .input-field {
-    @apply w-full px-4 py-3 border border-gray-200/50 dark:border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 hover:bg-white/90 dark:hover:bg-gray-800/90;
+    @apply w-full px-4 py-3 border border-gray-200/50 dark:border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 hover:bg-white/90 dark:hover:bg-gray-800/90;
+    transition: all 150ms ease-in-out !important;
   }
   
   .voice-visualizer {
@@ -222,6 +226,7 @@
     backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    transition: all 150ms ease-in-out !important;
   }
 
   .dark .glass-effect {
@@ -236,7 +241,7 @@
     backdrop-filter: blur(15px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 12px 28px rgba(31, 38, 135, 0.2);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 150ms ease-in-out !important;
   }
 
   .dark .glass-card {
@@ -274,8 +279,14 @@
 }
 
 /* Smooth transitions for theme switching */
-* {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+*,
+*::before,
+*::after {
+  transition: background-color 150ms ease-in-out, 
+              border-color 150ms ease-in-out, 
+              color 150ms ease-in-out,
+              box-shadow 150ms ease-in-out,
+              opacity 150ms ease-in-out !important;
 }
 
 /* Focus styles */

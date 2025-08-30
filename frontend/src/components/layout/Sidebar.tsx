@@ -77,18 +77,19 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
   const SidebarContent = () => (
     <>
       {/* Header */}
-      <div className="flex h-16 items-center justify-between px-4 bg-white dark:bg-dark-900 border-b border-gray-200 dark:border-gray-700/40">
+      <div className="flex h-16 items-center justify-between px-4 bg-white dark:bg-dark-900 border-b border-gray-200 dark:border-gray-700/40" style={{ transition: 'all 150ms ease-in-out' }}>
         {!isCollapsed ? (
           <div className="flex">
             <img 
               src={theme === 'light' ? logoLight : logoDark} 
               alt="Voice Q&A Logo" 
-              className={`${theme === 'light' ? 'h-[25px]' : 'h-[25px]'} w-auto object-contain max-w-[180px] transition-all duration-200`}
+              className={`${theme === 'light' ? 'h-[25px]' : 'h-[25px]'} w-auto object-contain max-w-[180px]`}
+              style={{ transition: 'all 150ms ease-in-out' }}
             />
           </div>
         ) : (
           <div className="flex items-center justify-center w-full">
-            <MicrophoneIconSolid className="h-7 w-7 text-blue-600 dark:text-blue-400 transition-all duration-200" />
+            <MicrophoneIconSolid className="h-7 w-7 text-blue-600 dark:text-blue-400" style={{ transition: 'all 150ms ease-in-out' }} />
           </div>
         )}
 
@@ -96,7 +97,8 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
           {!isMobile && (
             <button
               onClick={handleCollapse}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 transition-all duration-200 hover:bg-gray-300 dark:hover:bg-gray-700/70 hover:text-gray-900 dark:hover:text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700/70 hover:text-gray-900 dark:hover:text-white"
+              style={{ transition: 'all 150ms ease-in-out' }}
             >
               {isCollapsed ? (
                 <ChevronRightIcon className="h-4 w-4" />
@@ -109,7 +111,8 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
           {isMobile && (
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 transition-all duration-200 hover:bg-gray-300 dark:hover:bg-gray-700/70 hover:text-gray-900 dark:hover:text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700/70 hover:text-gray-900 dark:hover:text-white"
+              style={{ transition: 'all 150ms ease-in-out' }}
             >
               <XMarkIcon className="h-4 w-4" />
             </button>
@@ -143,19 +146,21 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                       onPageChange(item.id);
                       if (isMobile) setIsMobileMenuOpen(false);
                     }}
-                    className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 w-full ${
+                    className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium w-full ${
                       isActive
                         ? "bg-blue-100 dark:bg-gray-800/60 text-blue-900 dark:text-white backdrop-blur-sm"
                         : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-200"
                     }`}
+                    style={{ transition: 'all 150ms ease-in-out' }}
                     title={isCollapsed ? item.name : ""}
                   >
                     <Icon
-                      className={`h-4 w-5 shrink-0 transition-all duration-200 ${
+                      className={`h-4 w-5 shrink-0 ${
                         isActive
                           ? "text-blue-900 dark:text-white"
                           : "text-gray-600 dark:text-gray-400"
                       }`}
+                      style={{ transition: 'all 150ms ease-in-out' }}
                     />
 
                     {!isCollapsed && (
@@ -172,11 +177,12 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
       </div>
 
       {/* Footer */}
-      <div className="p-3 bg-white dark:bg-dark-900 border-t border-gray-200 dark:border-gray-700/40">
+      <div className="p-3 bg-white dark:bg-dark-900 border-t border-gray-200 dark:border-gray-700/40" style={{ transition: 'all 150ms ease-in-out' }}>
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="w-full flex items-center px-3 py-2.5 mb-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-200 rounded-xl transition-all duration-200"
+          className="w-full flex items-center px-3 py-2.5 mb-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-200 rounded-xl"
+          style={{ transition: 'all 150ms ease-in-out' }}
         >
           {theme === 'light' ? (
             <MoonIcon className="h-4 w-5 shrink-0" />
@@ -212,7 +218,8 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center px-3 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
+          className="w-full flex items-center px-3 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl"
+          style={{ transition: 'all 150ms ease-in-out' }}
         >
           <ArrowLeftOnRectangleIcon className="h-4 w-5 shrink-0" />
           {!isCollapsed && (
@@ -250,9 +257,10 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
 
       {/* Desktop sidebar */}
       <div 
-        className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 bg-gray-100 dark:bg-dark-900 border-r border-gray-200 dark:border-gray-800/50 shadow-xl transition-all duration-300 ease-in-out ${
+        className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 bg-gray-100 dark:bg-dark-900 border-r border-gray-200 dark:border-gray-800/50 shadow-xl ${
           isCollapsed ? "lg:w-[70px]" : "lg:w-[280px]"
         }`}
+        style={{ transition: 'all 150ms ease-in-out' }}
       >
         <SidebarContent />
       </div>

@@ -146,20 +146,21 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Voice Settings</h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Configure your ElevenLabs voice preferences
-        </p>
-      </div>
+    <div className="p-4 md:p-6 bg-gray-50 dark:bg-black min-h-screen text-gray-900 dark:text-white">
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Voice Settings</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Configure your ElevenLabs voice preferences
+          </p>
+        </div>
 
-      {/* ElevenLabs Voice Selection */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Select ElevenLabs Voice
-        </h3>
+        {/* ElevenLabs Voice Selection */}
+        <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Select ElevenLabs Voice
+          </h3>
 
         {loadingVoices ? (
           <div className="flex items-center justify-center py-8">
@@ -177,7 +178,7 @@ export function SettingsPage() {
                 onChange={(e) => {
                   updateSettings({ selectedVoice: e.target.value, provider: 'elevenlabs' });
                 }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="input-field"
               >
                 <option value="">Select a voice...</option>
                 {voices.map((voice) => (
@@ -211,7 +212,7 @@ export function SettingsPage() {
                             audio.play().catch(e => console.error('Preview failed:', e));
                           }
                         }}
-                        className="ml-2 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                        className="ml-2 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
                       >
                         🎵 Preview
                       </button>
@@ -241,59 +242,60 @@ export function SettingsPage() {
             
             <button
               onClick={loadVoices}
-              className="mt-2 text-sm text-primary-600 dark:text-primary-400 hover:underline"
+              className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
             >
               Refresh voices
             </button>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Voice Testing */}
-      {settings.selectedVoice && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Test Voice
-          </h3>
+        {/* Voice Testing */}
+        {settings.selectedVoice && (
+          <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Test Voice
+            </h3>
+            <button
+              onClick={testVoice}
+              disabled={isTestingVoice}
+              className="btn-primary"
+            >
+              {isTestingVoice ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  <span>Testing...</span>
+                </>
+              ) : (
+                <>
+                  <PlayIcon className="h-4 w-4" />
+                  <span>Test Voice</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Save Settings */}
+        <div className="flex justify-end">
           <button
-            onClick={testVoice}
-            disabled={isTestingVoice}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white rounded-lg transition-colors"
+            onClick={saveSettings}
+            disabled={isSaving}
+            className="btn-primary"
           >
-            {isTestingVoice ? (
+            {isSaving ? (
               <>
                 <LoadingSpinner size="sm" />
-                <span>Testing...</span>
+                <span>Saving...</span>
               </>
             ) : (
               <>
-                <PlayIcon className="h-4 w-4" />
-                <span>Test Voice</span>
+                <Cog6ToothIcon className="h-4 w-4" />
+                <span>Save Settings</span>
               </>
             )}
           </button>
         </div>
-      )}
-
-      {/* Save Settings */}
-      <div className="flex justify-end">
-        <button
-          onClick={saveSettings}
-          disabled={isSaving}
-          className="flex items-center space-x-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white rounded-lg transition-colors"
-        >
-          {isSaving ? (
-            <>
-              <LoadingSpinner size="sm" />
-              <span>Saving...</span>
-            </>
-          ) : (
-            <>
-              <Cog6ToothIcon className="h-4 w-4" />
-              <span>Save Settings</span>
-            </>
-          )}
-        </button>
       </div>
     </div>
   );
