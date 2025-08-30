@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Chart from 'react-apexcharts';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import {
   CheckBadgeIcon,
   ClockIcon,
@@ -381,62 +381,369 @@ const CurrentRating = () => {
 
 // Recent Activities Table
 const RecentActivitiesTable = () => {
-  const activities = [
-    { time: '2 minutes ago', action: 'Question answered about React hooks', user: 'John Doe', status: 'success' },
-    { time: '15 minutes ago', action: 'New URLs processed from tech blog', user: 'Jane Smith', status: 'success' },
-    { time: '1 hour ago', action: 'Voice settings updated to ElevenLabs', user: 'Mike Johnson', status: 'pending' },
-    { time: '3 hours ago', action: 'Session started with 5 URLs', user: 'Sarah Wilson', status: 'success' },
-    { time: '6 hours ago', action: 'Analytics report generated', user: 'Tom Brown', status: 'success' },
+  const [selectedActivity, setSelectedActivity] = useState("");
+
+  // Sample data matching the sales diary structure
+  const activitiesData = [
+    {
+      id: 1,
+      user: "John Doe",
+      userId: "USR001",
+      activity: "Question answered about React hooks",
+      details: "Provided detailed explanation about useState and useEffect",
+      date: "2025-08-30T10:30:00Z",
+      category: "Q&A",
+      status: "success",
+      avatar: "JD",
+      avatarColor: "bg-blue-500",
+      responseTime: "2.3s",
+      sessionId: "SES001",
+      amount: 1,
+    },
+    {
+      id: 2,
+      user: "Jane Smith",
+      userId: "USR002",
+      activity: "New URLs processed from tech blog",
+      details: "Added 5 new URLs from TechCrunch to knowledge base",
+      date: "2025-08-30T10:15:00Z",
+      category: "URL Processing",
+      status: "success",
+      avatar: "JS",
+      avatarColor: "bg-green-500",
+      responseTime: "1.8s",
+      sessionId: "SES002",
+      amount: 5,
+    },
+    {
+      id: 3,
+      user: "Mike Johnson",
+      userId: "USR003",
+      activity: "Voice settings updated to ElevenLabs",
+      details: "Changed voice model to Rachel for better pronunciation",
+      date: "2025-08-30T09:30:00Z",
+      category: "Configuration",
+      status: "pending",
+      avatar: "MJ",
+      avatarColor: "bg-orange-500",
+      responseTime: "0.5s",
+      sessionId: "SES003",
+      amount: 1,
+    },
+    {
+      id: 4,
+      user: "Sarah Wilson",
+      userId: "USR004",
+      activity: "Session started with 5 URLs",
+      details: "Initiated new knowledge extraction session",
+      date: "2025-08-30T06:30:00Z",
+      category: "Session",
+      status: "success",
+      avatar: "SW",
+      avatarColor: "bg-purple-500",
+      responseTime: "3.2s",
+      sessionId: "SES004",
+      amount: 5,
+    },
+    {
+      id: 5,
+      user: "Tom Brown",
+      userId: "USR005",
+      activity: "Analytics report generated",
+      details: "Monthly analytics report with performance metrics",
+      date: "2025-08-30T00:00:00Z",
+      category: "Analytics",
+      status: "success",
+      avatar: "TB",
+      avatarColor: "bg-indigo-500",
+      responseTime: "12.4s",
+      sessionId: "SES005",
+      amount: 1,
+    },
   ];
 
-  return (
-    <div className="border border-gray-300 dark:border-dark-700 rounded-2xl">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Activities</h3>
+  // Filter data based on selected activity type
+  const filteredData =
+    selectedActivity === "ALL" || selectedActivity === ""
+      ? activitiesData
+      : activitiesData.filter((activity) => activity.category === selectedActivity);
+
+  // Column definitions
+  const columns = [
+    // User column with avatar
+    {
+      accessorKey: "user",
+      header: "User",
+      cell: ({ row }) => {
+        const activity = row.original;
+        return (
+          <div className="flex items-center gap-2.5 cursor-pointer">
+            <div
+              className={`w-8 h-8 ${activity.avatarColor} rounded-full flex items-center justify-center flex-shrink-0`}
+            >
+              <span className="text-white font-medium text-xs">
+                {activity.avatar}
+              </span>
+            </div>
+            <div>
+              <div className="text-gray-900 dark:text-white font-medium text-sm truncate">
+                {activity.user}
+              </div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">{activity.userId}</div>
+            </div>
+          </div>
+        );
+      },
+      size: 200,
+    },
+
+    // Date column
+    {
+      accessorKey: "date",
+      header: "Date",
+      cell: ({ getValue }) => {
+        const date = new Date(getValue());
+        return (
+          <div className="flex items-center gap-2">
+            <ClockIcon className="w-3.5 h-3.5 text-gray-400" />
+            <span className="text-gray-700 dark:text-gray-300 text-sm">
+              {date.toLocaleDateString("en-US", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+        );
+      },
+      size: 140,
+    },
+
+    // Activity column
+    {
+      accessorKey: "activity",
+      header: "Activity",
+      cell: ({ row }) => {
+        const activity = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <div>
+              <div className="text-gray-700 dark:text-gray-300 text-sm font-medium">
+                {activity.activity}
+              </div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">{activity.category}</div>
+            </div>
+          </div>
+        );
+      },
+      size: 280,
+    },
+
+    // Status column
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const activity = row.original;
+        const getStatusColor = (status) => {
+          switch (status) {
+            case "success":
+              return "text-green-400 bg-green-500/10";
+            case "pending":
+              return "text-yellow-400 bg-yellow-500/10";
+            case "error":
+              return "text-red-400 bg-red-500/10";
+            default:
+              return "text-gray-400 bg-gray-500/10";
+          }
+        };
+
+        return (
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-2 py-1 rounded-md text-sm font-medium ${getStatusColor(
+                activity.status
+              )}`}
+            >
+              {activity.status}
+            </span>
+          </div>
+        );
+      },
+      size: 120,
+    },
+
+    // Amount column
+    {
+      accessorKey: "amount",
+      header: "Items",
+      cell: ({ getValue }) => (
+        <span className="text-gray-500 dark:text-gray-400 text-sm">{getValue()}</span>
+      ),
+      size: 80,
+    },
+  ];
+
+  // Custom expanded content
+  const expandedContent = (row) => {
+    const activity = row.original;
+    return (
+      <div className="px-4 py-4 bg-gray-900/30 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Activity Details */}
+          <div>
+            <h4 className="text-gray-900 dark:text-white font-medium mb-3 text-sm flex items-center gap-2">
+              <MicrophoneIcon className="w-4 h-4" />
+              Activity Details
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Session ID:</span>
+                <span className="text-gray-900 dark:text-white font-mono">
+                  {activity.sessionId}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Response Time:</span>
+                <span className="text-gray-900 dark:text-white">
+                  {activity.responseTime}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Category:</span>
+                <span className="text-gray-900 dark:text-white">{activity.category}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* User Info */}
+          <div>
+            <h4 className="text-gray-900 dark:text-white font-medium mb-3 text-sm flex items-center gap-2">
+              <UsersIcon className="w-4 h-4" />
+              User Information
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">User ID:</span>
+                <span className="text-gray-900 dark:text-white">{activity.userId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Full Name:</span>
+                <span className="text-gray-900 dark:text-white">{activity.user}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Items Processed:</span>
+                <span className="text-gray-900 dark:text-white">{activity.amount}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Status & Actions */}
+          <div>
+            <h4 className="text-gray-900 dark:text-white font-medium mb-3 text-sm flex items-center gap-2">
+              <CheckBadgeIcon className="w-4 h-4" />
+              Details & Description
+            </h4>
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                <div className="text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">
+                  Activity Description
+                </div>
+                <div className="text-xs text-gray-800 dark:text-gray-300">
+                  {activity.details}
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Performed on {new Date(activity.date).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-dark-800">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Activity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                User
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Time
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-dark-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {activities.map((activity, index) => (
-              <tr key={index}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-white">{activity.action}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-white">{activity.user}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    activity.status === 'success' 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                  }`}>
-                    {activity.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">{activity.time}</div>
-                </td>
+    );
+  };
+
+  // Action handlers
+  const handleRowClick = (activity) => {
+    console.log("Row clicked:", activity);
+  };
+
+  const handleRowSelect = (selectedActivities) => {
+    console.log("Selected activities:", selectedActivities);
+  };
+
+  const handleSearch = (searchTerm) => {
+    console.log("Search term:", searchTerm);
+  };
+
+  const moreOptions = [
+    {
+      id: "export",
+      label: "Export Activities",
+    },
+    {
+      id: "refresh",
+      label: "Refresh Data",
+    },
+    {
+      id: "filter",
+      label: "Advanced Filter",
+    },
+  ];
+
+  const handleMoreOptionClick = (option) => {
+    console.log("More option clicked:", option);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* DataTable Component */}
+      <div className="border border-gray-300 dark:border-dark-700 rounded-2xl">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Activities</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                {columns.map((column, index) => (
+                  <th
+                    key={index}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  >
+                    {column.header}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-400 dark:divide-gray-500">
+              {filteredData.map((activity) => (
+                <React.Fragment key={activity.id}>
+                  <tr 
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer border-b border-gray-400 dark:border-gray-500"
+                    onClick={() => handleRowClick(activity)}
+                  >
+                    {columns.map((column, colIndex) => (
+                      <td key={colIndex} className="px-4 py-4 whitespace-nowrap">
+                        {column.cell ? 
+                          column.cell({ 
+                            row: { 
+                              original: activity,
+                              getIsExpanded: () => false,
+                              toggleExpanded: () => {}
+                            },
+                            getValue: () => activity[column.accessorKey]
+                          }) 
+                          : activity[column.accessorKey]
+                        }
+                      </td>
+                    ))}
+                  </tr>
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
