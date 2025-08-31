@@ -1,134 +1,296 @@
-import { LinkInput } from './LinkInput';
-import { VoiceRecorder } from './VoiceRecorder';
-import { AnswerDisplay } from './AnswerDisplay';
+import React, { useState } from 'react';
+import { ChatInterface } from './ChatInterface';
 import { LoadingSpinner } from './LoadingSpinner';
 import { useAppStore } from '../stores/appStore';
-import { SparklesIcon, MicrophoneIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { apiService } from '../services/api';
+import toast from 'react-hot-toast';
+import { 
+  ChatBubbleLeftRightIcon, 
+  MicrophoneIcon, 
+  DocumentTextIcon, 
+  PlusIcon,
+  TrashIcon,
+  Bars3Icon,
+  XMarkIcon,
+  LinkIcon,
+  CheckIcon
+} from '@heroicons/react/24/outline';
 
 export function VoiceQAPage() {
-  const { extractedContent, isLoading, error } = useAppStore();
+  const { extractedContent, isLoading, error, urls, addUrl, removeUrl, setExtractedContent, setLoading, setError, setSessionId } = useAppStore();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [newUrl, setNewUrl] = useState('');
+  const [showAddUrl, setShowAddUrl] = useState(false);
+  const [chatHistory] = useState([
+    { id: 1, title: "React Hooks Questions", lastMessage: "What are React hooks?", timestamp: "2m ago" },
+    { id: 2, title: "JavaScript Fundamentals", lastMessage: "Explain closures in JS", timestamp: "1h ago" },
+    { id: 3, title: "API Documentation", lastMessage: "How to use REST APIs?", timestamp: "2h ago" },
+    { id: 4, title: "CSS Grid Layout", lastMessage: "Grid vs Flexbox differences", timestamp: "1d ago" },
+    { id: 5, title: "Database Queries", lastMessage: "SQL JOIN operations", timestamp: "2d ago" },
+  ]);
+
+  const handleAddUrl = () => {
+    if (newUrl.trim()) {
+      addUrl(newUrl.trim());
+      setNewUrl('');
+      setShowAddUrl(false);
+    }
+  };
+
+  const validateUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleExtractContent = async () => {
+    const validUrls = urls.filter(url => url.trim() && validateUrl(url.trim()));
+    
+    if (validUrls.length < 2) {
+      toast.error('Please provide at least 2 valid URLs');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await apiService.extractContent(validUrls);
+      
+      if (!result.success || result.extracted_content.filter(c => c.success).length === 0) {
+        const failedExtractions = result.extracted_content.filter(c => !c.success);
+        if (failedExtractions.length > 0) {
+          const firstError = failedExtractions[0];
+          setError(`Failed to extract content: ${firstError.error_message || 'Unknown error'}`);
+        } else {
+          setError('Failed to extract content from provided URLs');
+        }
+        setExtractedContent([]);
+        return;
+      }
+
+      setExtractedContent(result.extracted_content);
+      if (result.session_id) {
+        setSessionId(result.session_id);
+      }
+      
+      const successCount = result.extracted_content.filter(c => c.success).length;
+      const totalCount = result.extracted_content.length;
+      
+      if (successCount === totalCount) {
+        toast.success(`Successfully extracted content from ${successCount} URLs`);
+      } else {
+        toast.success(`Extracted content from ${successCount}/${totalCount} URLs`);
+      }
+      
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to extract content';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="p-4 md:p-6 bg-gray-50 dark:bg-black min-h-screen text-gray-900 dark:text-white">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
-            <SparklesIcon className="w-8 h-8" />
+    <div className="h-[90vh] bg-gray-50 dark:bg-black flex overflow-hidden">
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center space-x-3">
+            <LoadingSpinner size="md" />
+            <span className="text-gray-700 dark:text-gray-300">Processing...</span>
           </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Voice Q&A
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Extract content from web sources and ask questions using your voice
-            </p>
+        </div>
+      )}
+
+      {/* Sidebar */}
+      <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden bg-transparent text-white flex flex-col`}>
+        {/* Sidebar Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <div className="flex items-center gap-2">
+            <MicrophoneIcon className="w-5 h-5 text-blue-400" />
+            <h1 className="font-semibold">Voice Q&A</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-1 px-2 py-1 border border-gray-600 rounded-md hover:bg-gray-800 transition-colors">
+              <PlusIcon className="w-3 h-3" />
+              <span className="text-xs">New</span>
+            </button>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-1 hover:bg-gray-800 rounded lg:hidden"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Loading Overlay */}
-        {isLoading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-dark-800 rounded-lg p-6 flex items-center space-x-3">
-              <LoadingSpinner size="md" />
-              <span className="text-gray-700 dark:text-gray-300">Processing...</span>
+
+        {/* Content Sources Section */}
+        <div className="px-4 pb-4">
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                <DocumentTextIcon className="w-4 h-4" />
+                Content Sources
+              </h3>
+              <button
+                onClick={() => setShowAddUrl(!showAddUrl)}
+                className="p-1 hover:bg-gray-800 rounded transition-colors"
+                title="Add URL"
+              >
+                <PlusIcon className="w-3 h-3 text-gray-400" />
+              </button>
             </div>
+
+            {/* Add URL Input */}
+            {showAddUrl && (
+              <div className="mb-3 space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="flex-1 px-2 py-1 bg-gray-800 border border-gray-600 rounded text-xs text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddUrl()}
+                  />
+                  <button
+                    onClick={handleAddUrl}
+                    disabled={!newUrl.trim()}
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs transition-colors"
+                  >
+                    <CheckIcon className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Current URLs */}
+            {urls.length > 0 && (
+              <div className="mb-3">
+                <div className="space-y-1 max-h-24 overflow-y-auto">
+                  {urls.map((url, index) => (
+                    <div key={index} className="flex items-center gap-2 p-2 bg-gray-800 rounded text-xs">
+                      <LinkIcon className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white truncate">{url}</p>
+                      </div>
+                      <button
+                        onClick={() => removeUrl(index)}
+                        className="p-0.5 hover:bg-gray-700 rounded transition-colors"
+                      >
+                        <TrashIcon className="w-3 h-3 text-gray-400 hover:text-red-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Extract Content Button */}
+                <button
+                  onClick={handleExtractContent}
+                  disabled={urls.length < 2 || isLoading}
+                  className="w-full mt-2 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>Extract Content ({urls.length}/2+)</>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Extracted Content Display */}
+            {extractedContent.length > 0 && (
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                <p className="text-xs text-gray-400 font-medium">Extracted Content:</p>
+                {extractedContent.map((content, index) => (
+                  <div key={index} className="flex items-center gap-2 p-2 bg-gray-800 rounded text-xs">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${content.success ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-white truncate">{content.title}</p>
+                      <p className="text-gray-400">{content.word_count} words</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Help Text */}
+            {urls.length === 0 && !showAddUrl && (
+              <div className="text-xs text-gray-500 p-3 border border-gray-700 rounded-lg">
+                <p className="mb-2">Add web sources to get started</p>
+                <p>At least 2 URLs recommended for better answers</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Chat History */}
+        <div className="flex-1 overflow-hidden px-4">
+          <div className="mb-3">
+            <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+              <ChatBubbleLeftRightIcon className="w-4 h-4" />
+              Recent Chats
+            </h3>
+          </div>
+          <div className="space-y-2 overflow-y-auto h-full pb-4">
+            {chatHistory.map((chat) => (
+              <div key={chat.id} className="group p-3 rounded-lg hover:bg-gray-800 cursor-pointer transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-white truncate">{chat.title}</h4>
+                    <p className="text-xs text-gray-400 truncate mt-1">{chat.lastMessage}</p>
+                    <p className="text-xs text-gray-500 mt-1">{chat.timestamp}</p>
+                  </div>
+                  <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-700 rounded transition-opacity">
+                    <TrashIcon className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        {!isSidebarOpen && (
+          <div className="p-4">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <Bars3Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
           </div>
         )}
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
-                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
-                  <p>{error}</p>
-                </div>
-              </div>
+          <div className="mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm text-red-800 dark:text-red-200">{error}</span>
             </div>
           </div>
         )}
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-6">
-            <LinkInput />
-            
-            {extractedContent.length > 0 && (
-              <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <DocumentTextIcon className="w-6 h-6 text-blue-500" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Extracted Content Summary
-                  </h3>
-                </div>
-                <div className="space-y-3">
-                  {extractedContent.map((content, index) => (
-                    <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
-                      <h4 className="font-medium text-gray-900 dark:text-white">{content.title}</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {content.word_count} words from {content.url}
-                      </p>
-                      {!content.success && content.error_message && (
-                        <p className="text-sm text-red-600 dark:text-red-400">{content.error_message}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            {extractedContent.length > 0 && <VoiceRecorder />}
-            <AnswerDisplay />
-          </div>
+        {/* Chat Interface */}
+        <div className="flex-1 min-h-0">
+          <ChatInterface />
         </div>
-
-        {/* Instructions */}
-        {extractedContent.length === 0 && (
-          <div className="mt-12 text-center">
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                How to Use Voice-Driven Q&A
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
-                  <div className="text-blue-600 dark:text-blue-400 text-2xl font-bold mb-2">1</div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Add Content Sources</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Provide at least 3 web links (websites, Wikipedia, news articles) 
-                    to extract content from.
-                  </p>
-                </div>
-                <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
-                  <div className="text-blue-600 dark:text-blue-400 text-2xl font-bold mb-2">2</div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Ask Questions</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Use voice recording or type questions about the extracted content. 
-                    The AI will analyze and provide answers.
-                  </p>
-                </div>
-                <div className="bg-white dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-2xl p-6">
-                  <div className="text-blue-600 dark:text-blue-400 text-2xl font-bold mb-2">3</div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Listen & Learn</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Get text and audio responses with source citations. 
-                    Copy answers or replay audio as needed.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

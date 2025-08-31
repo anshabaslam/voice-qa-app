@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Chart from 'react-apexcharts';
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import {
   CheckBadgeIcon,
   ClockIcon,
@@ -9,6 +9,7 @@ import {
   MicrophoneIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
+import { DocsSidebar } from '../DocsSidebar';
 
 // Activity Chart Component
 const ActivityChart = () => {
@@ -474,7 +475,7 @@ const RecentActivitiesTable = () => {
     {
       accessorKey: "user",
       header: "User",
-      cell: ({ row }) => {
+      cell: ({ row }:any) => {
         const activity = row.original;
         return (
           <div className="flex items-center gap-2.5 cursor-pointer">
@@ -501,7 +502,7 @@ const RecentActivitiesTable = () => {
     {
       accessorKey: "date",
       header: "Date",
-      cell: ({ getValue }) => {
+      cell: ({ getValue }:any) => {
         const date = new Date(getValue());
         return (
           <div className="flex items-center gap-2">
@@ -523,7 +524,7 @@ const RecentActivitiesTable = () => {
     {
       accessorKey: "activity",
       header: "Activity",
-      cell: ({ row }) => {
+      cell: ({ row }:any) => {
         const activity = row.original;
         return (
           <div className="flex items-center gap-2">
@@ -543,9 +544,9 @@ const RecentActivitiesTable = () => {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => {
+      cell: ({ row }:any) => {
         const activity = row.original;
-        const getStatusColor = (status) => {
+        const getStatusColor = (status:any) => {
           switch (status) {
             case "success":
               return "text-green-400 bg-green-500/10";
@@ -577,7 +578,7 @@ const RecentActivitiesTable = () => {
     {
       accessorKey: "amount",
       header: "Items",
-      cell: ({ getValue }) => (
+      cell: ({ getValue }:any) => (
         <span className="text-gray-500 dark:text-gray-400 text-sm">{getValue()}</span>
       ),
       size: 80,
@@ -585,7 +586,7 @@ const RecentActivitiesTable = () => {
   ];
 
   // Custom expanded content
-  const expandedContent = (row) => {
+  const expandedContent = (row:any) => {
     const activity = row.original;
     return (
       <div className="px-4 py-4 bg-gray-900/30 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700">
@@ -664,15 +665,15 @@ const RecentActivitiesTable = () => {
   };
 
   // Action handlers
-  const handleRowClick = (activity) => {
+  const handleRowClick = (activity:any) => {
     console.log("Row clicked:", activity);
   };
 
-  const handleRowSelect = (selectedActivities) => {
+  const handleRowSelect = (selectedActivities:any) => {
     console.log("Selected activities:", selectedActivities);
   };
 
-  const handleSearch = (searchTerm) => {
+  const handleSearch = (searchTerm:any) => {
     console.log("Search term:", searchTerm);
   };
 
@@ -691,7 +692,7 @@ const RecentActivitiesTable = () => {
     },
   ];
 
-  const handleMoreOptionClick = (option) => {
+  const handleMoreOptionClick = (option:any) => {
     console.log("More option clicked:", option);
   };
 
@@ -732,9 +733,9 @@ const RecentActivitiesTable = () => {
                               getIsExpanded: () => false,
                               toggleExpanded: () => {}
                             },
-                            getValue: () => activity[column.accessorKey]
+                            getValue: () => activity[column.accessorKey as keyof typeof activity]
                           }) 
-                          : activity[column.accessorKey]
+                          : activity[column.accessorKey as keyof typeof activity  ]
                         }
                       </td>
                     ))}
@@ -752,6 +753,7 @@ const RecentActivitiesTable = () => {
 // Main Analytics Page Component
 export function AnalyticsPage() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 7)); // August 2025
+  const [isDocsSidebarOpen, setIsDocsSidebarOpen] = useState(false);
 
   const generateCalendar = () => {
     const year = currentDate.getFullYear();
@@ -791,6 +793,15 @@ export function AnalyticsPage() {
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 dark:bg-black min-h-screen text-gray-900 dark:text-white">
+      {/* Floating Documentation Button */}
+      <button
+        onClick={() => setIsDocsSidebarOpen(true)}
+        className="fixed bottom-6 right-6 z-30 flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        title="Open Documentation"
+      >
+        <QuestionMarkCircleIcon className="w-6 h-6" />
+      </button>
+
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left Section - Main Content */}
         <div className="xl:col-span-3 space-y-6">
@@ -873,6 +884,12 @@ export function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Documentation Sidebar */}
+      <DocsSidebar 
+        isOpen={isDocsSidebarOpen} 
+        onClose={() => setIsDocsSidebarOpen(false)} 
+      />
     </div>
   );
 }

@@ -12,11 +12,13 @@ import {
   XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import { 
   MicrophoneIcon as MicrophoneIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
   ChartBarIcon as ChartBarIconSolid,
+  BookOpenIcon as BookOpenIconSolid,
 } from '@heroicons/react/24/solid';
 import logoLight from '../../assets/logo-black.png';
 import logoDark from '../../assets/logo-white.png';
@@ -45,6 +47,12 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
       id: 'analytics',
       icon: ChartBarIcon,
       iconSolid: ChartBarIconSolid,
+    },
+    {
+      name: 'Documentation',
+      id: 'documentation',
+      icon: BookOpenIcon,
+      iconSolid: BookOpenIconSolid,
     },
     {
       name: 'Settings',

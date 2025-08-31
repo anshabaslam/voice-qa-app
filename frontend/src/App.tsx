@@ -10,6 +10,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { VoiceQAPage } from './components/VoiceQAPage';
 import { AnalyticsPage } from './components/analytics/AnalyticsPage';
 import { SettingsPage } from './components/settings/SettingsPage';
+import { DocumentationPage } from './components/documentation/DocumentationPage';
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
@@ -30,6 +31,8 @@ function AppContent() {
         return <VoiceQAPage />;
       case 'analytics':
         return <AnalyticsPage />;
+      case 'documentation':
+        return <DocumentationPage />;
       case 'settings':
         return <SettingsPage />;
       default:
