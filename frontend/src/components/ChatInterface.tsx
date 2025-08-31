@@ -1,31 +1,30 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { PaperAirplaneIcon, MicrophoneIcon, PhotoIcon, SpeakerWaveIcon, ClipboardDocumentIcon, HandThumbUpIcon, HandThumbDownIcon, ArrowPathIcon, StopIcon, CommandLineIcon } from '@heroicons/react/24/outline';
-import { useAppStore } from '../stores/appStore';
+import { ClipboardDocumentIcon, HandThumbDownIcon, HandThumbUpIcon, MicrophoneIcon, PaperAirplaneIcon, SpeakerWaveIcon, StopIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useRef, useState } from 'react';
 import { useVoice } from '../contexts/VoiceContext';
 import { useVoiceRecording } from '../hooks/useVoiceRecording';
 import { apiService } from '../services/api';
+import { useAppStore } from '../stores/appStore';
+import type { Message } from '../types';
 import { toast } from '../utils/toast';
 
-interface Message {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-}
-
 export function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
   const [messageFeedback, setMessageFeedback] = useState<Record<string, 'like' | 'dislike' | null>>({});
   const [shakeMessageId, setShakeMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { currentAnswer, currentQuestion, voiceState, sessionId, extractedContent, setCurrentAnswer, setLoading, setError } = useAppStore();
+  const { currentAnswer, currentQuestion, voiceState, sessionId, extractedContent, setCurrentAnswer, setLoading, setError, getCurrentMessages, addMessageToCurrentChat, currentChatId, createNewChat, trackQuestion, trackAnswer, addActivity } = useAppStore();
   const { speak, settings, stopSpeaking } = useVoice();
   const { isSupported, isRecording, isProcessing, audioLevel, transcript, startRecording, stopRecording } = useVoiceRecording();
   const voiceIsProcessing = voiceState.isProcessing;
   const hasContentSources = extractedContent.length > 0;
+  const messages = getCurrentMessages();
+  
+  // Ensure messages update when currentChatId changes
+  useEffect(() => {
+    // Just a trigger to re-render when chat changes
+  }, [currentChatId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -41,6 +40,21 @@ export function ChatInterface() {
     setIsTyping(true);
     setLoading(true);
     setError(null);
+    
+    const startTime = Date.now();
+
+    // Track the question
+    trackQuestion(question);
+    
+    // Add activity for question asked
+    addActivity({
+      id: `activity-${Date.now()}`,
+      activity: 'Question asked',
+      details: question.length > 50 ? question.substring(0, 47) + '...' : question,
+      date: new Date(),
+      category: 'Q&A',
+      status: 'pending'
+    });
 
     try {
       // Check if content sources are available
@@ -68,9 +82,34 @@ export function ChatInterface() {
         session_id: sessionId,
       });
 
+      // Track answer and response time
+      const responseTime = Date.now() - startTime;
+      trackAnswer(result.answer, responseTime);
+      
+      // Add activity for successful answer
+      addActivity({
+        id: `activity-answer-${Date.now()}`,
+        activity: 'Answer provided',
+        details: `Responded in ${responseTime}ms with ${result.sources.length} sources`,
+        date: new Date(),
+        category: 'Q&A',
+        status: 'success'
+      });
+
       setCurrentAnswer(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to get answer';
+      
+      // Add activity for error
+      addActivity({
+        id: `activity-error-${Date.now()}`,
+        activity: 'Question failed',
+        details: message,
+        date: new Date(),
+        category: 'Q&A',
+        status: 'error'
+      });
+      
       setError(message);
       toast.error(message);
     } finally {
@@ -82,6 +121,11 @@ export function ChatInterface() {
   // Add user question when transcript updates and automatically process it
   useEffect(() => {
     if (currentQuestion && currentQuestion.trim()) {
+      // Create a new chat if there isn't a current one
+      if (!currentChatId) {
+        createNewChat();
+      }
+
       const questionExists = messages.some(msg => msg.content === currentQuestion && msg.isUser);
       if (!questionExists) {
         const newMessage: Message = {
@@ -90,7 +134,7 @@ export function ChatInterface() {
           isUser: true,
           timestamp: new Date()
         };
-        setMessages(prev => [...prev, newMessage]);
+        addMessageToCurrentChat(newMessage);
         
         // Automatically process the question from voice recording
         processQuestion(currentQuestion);
@@ -108,7 +152,7 @@ export function ChatInterface() {
         isUser: false,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, newMessage]);
+      addMessageToCurrentChat(newMessage);
       
       // Automatically read the AI response aloud
       const readResponse = async () => {
@@ -129,6 +173,11 @@ export function ChatInterface() {
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
 
+    // Create a new chat if there isn't a current one
+    if (!currentChatId) {
+      createNewChat();
+    }
+
     const question = inputValue.trim();
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -137,7 +186,7 @@ export function ChatInterface() {
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, newMessage]);
+    addMessageToCurrentChat(newMessage);
     setInputValue('');
     
     // Process the question to get AI response

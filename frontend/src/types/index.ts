@@ -39,6 +39,43 @@ export interface VoiceState {
   transcript: string;
 }
 
+export interface Message {
+  id: string;
+  content: string;
+  isUser: boolean;
+  timestamp: Date | string;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  lastMessage: string;
+  timestamp: Date | string;
+  sessionId?: string;
+}
+
+export interface AnalyticsMetrics {
+  totalQuestions: number;
+  activeSessions: number;
+  totalUsers: number;
+  dailyQuestions: number[];
+  weeklyQuestions: number[];
+  monthlyQuestions: number[];
+  responseTime: number; // average in ms
+  accuracy: number; // percentage
+  recentActivities: ActivityRecord[];
+}
+
+export interface ActivityRecord {
+  id: string;
+  activity: string;
+  details: string;
+  date: Date | string;
+  category: 'Q&A' | 'Analytics' | 'System' | 'User';
+  status: 'success' | 'error' | 'pending';
+}
+
 export interface AppState {
   urls: string[];
   extractedContent: ExtractedContent[];
@@ -48,4 +85,7 @@ export interface AppState {
   isLoading: boolean;
   error: string | null;
   voiceState: VoiceState;
+  chatHistory: ChatSession[];
+  currentChatId: string | null;
+  analytics: AnalyticsMetrics;
 }

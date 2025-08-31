@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
-import Chart from 'react-apexcharts';
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import {
-  CheckBadgeIcon,
-  ClockIcon,
+  CheckBadgeIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon,
   CubeIcon,
   CurrencyDollarIcon,
-  MicrophoneIcon,
-  UsersIcon,
-} from "@heroicons/react/24/outline";
+  MicrophoneIcon, QuestionMarkCircleIcon, UsersIcon
+} from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import Chart from 'react-apexcharts';
 import { DocsSidebar } from '../DocsSidebar';
 
 // Activity Chart Component
@@ -16,16 +13,16 @@ const ActivityChart = () => {
   const chartConfig = {
     series: [
       {
-        name: "Revenue",
+        name: "Questions",
         data: [44, 55, 57, 56, 61, 58, 63],
       },
       {
-        name: "Profit",
+        name: "Sessions", 
         data: [76, 85, 101, 98, 87, 105, 91],
       },
       {
-        name: "Expenses",
-        data: [35, 41, 36, 26, 45, 48, 52],
+        name: "Response Time",
+        data: [35, 41, 62, 42, 13, 18, 29],
       },
     ],
     options: {
@@ -105,9 +102,9 @@ const ActivityChart = () => {
 
   return (
     <div className="ax-transparent-gridline2">
-      <div className="flex h-8 min-w-0 items-center justify-between">
+      <div className="flex h-8 min-w-0 items-center justify-between mb-4">
         <h2 className="truncate font-medium tracking-wide text-gray-800 dark:text-dark-100">
-          Financial Overview
+          Voice Q&A Activity Overview
         </h2>
       </div>
       <Chart

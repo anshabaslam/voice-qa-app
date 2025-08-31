@@ -1,34 +1,45 @@
-import React, { useState } from 'react';
-import { ChatInterface } from './ChatInterface';
-import { LoadingSpinner } from './LoadingSpinner';
-import { useAppStore } from '../stores/appStore';
-import { apiService } from '../services/api';
-import { toast } from '../utils/toast';
-import { 
-  ChatBubbleLeftRightIcon, 
-  MicrophoneIcon, 
-  DocumentTextIcon, 
+import {
+  Bars3Icon,
+  ChatBubbleLeftRightIcon,
+  CheckIcon,
+  DocumentTextIcon,
+  LinkIcon,
+  MicrophoneIcon,
   PlusIcon,
   TrashIcon,
-  Bars3Icon,
-  XMarkIcon,
-  LinkIcon,
-  CheckIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
+import { apiService } from '../services/api';
+import { useAppStore } from '../stores/appStore';
+import { toast } from '../utils/toast';
+import { ChatInterface } from './ChatInterface';
+
+const formatRelativeTime = (timestamp: Date | string) => {
+  const now = new Date();
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInMinutes < 1) return 'now';
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  return `${diffInDays}d ago`;
+};
 
 export function VoiceQAPage() {
-  const { extractedContent, isLoading, error, urls, addUrl, removeUrl, setExtractedContent, setSessionId } = useAppStore();
+  const { extractedContent, isLoading, error, urls, addUrl, removeUrl, setExtractedContent, setSessionId, chatHistory, selectChat, createNewChat, deleteChat, currentChatId, initializeDummyData } = useAppStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [newUrl, setNewUrl] = useState('');
   const [showAddUrl, setShowAddUrl] = useState(false);
   const [extractingUrls, setExtractingUrls] = useState<Set<string>>(new Set());
-  const [chatHistory] = useState([
-    { id: 1, title: "React Hooks Questions", lastMessage: "What are React hooks?", timestamp: "2m ago" },
-    { id: 2, title: "JavaScript Fundamentals", lastMessage: "Explain closures in JS", timestamp: "1h ago" },
-    { id: 3, title: "API Documentation", lastMessage: "How to use REST APIs?", timestamp: "2h ago" },
-    { id: 4, title: "CSS Grid Layout", lastMessage: "Grid vs Flexbox differences", timestamp: "1d ago" },
-    { id: 5, title: "Database Queries", lastMessage: "SQL JOIN operations", timestamp: "2d ago" },
-  ]);
+  
+  // Initialize dummy data on mount if needed
+  useEffect(() => {
+    initializeDummyData();
+  }, [initializeDummyData]);
 
   const handleAddUrl = async () => {
     const url = newUrl.trim();
@@ -120,7 +131,10 @@ export function VoiceQAPage() {
             <h1 className="font-semibold">Voice Q&A</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <button 
+              onClick={createNewChat}
+              className="flex items-center gap-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
               <PlusIcon className="w-3 h-3" />
               <span className="text-xs">New</span>
             </button>
@@ -240,25 +254,49 @@ export function VoiceQAPage() {
             </h3>
           </div>
           <div className="space-y-1 overflow-y-auto h-full pb-4">
-            {chatHistory.map((chat) => (
-              <div key={chat.id} className="group p-2 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer transition-colors rounded-md">
-                <div className="flex items-start gap-3">
-                  {/* Message icon */}
-                  <div className="flex-shrink-0 mt-1">
-                    <ChatBubbleLeftRightIcon className="w-4 h-4 text-gray-400" />
+            {chatHistory.length > 0 ? (
+              chatHistory.map((chat) => (
+                <div 
+                  key={chat.id} 
+                  onClick={() => selectChat(chat.id)}
+                  className={`group p-2 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer transition-colors rounded-md ${
+                    currentChatId === chat.id ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Message icon */}
+                    <div className="flex-shrink-0 mt-1">
+                      <ChatBubbleLeftRightIcon className="w-4 h-4 text-gray-400" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">{chat.title}</h4>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                          {formatRelativeTime(chat.timestamp)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">{chat.lastMessage}</p>
+                    </div>
+                    
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteChat(chat.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-opacity"
+                    >
+                      <TrashIcon className="w-3 h-3 text-gray-400" />
+                    </button>
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1 line-clamp-1">{chat.title}</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">{chat.lastMessage}</p>
-                  </div>
-                  
-                  <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-opacity">
-                    <TrashIcon className="w-3 h-3 text-gray-400" />
-                  </button>
                 </div>
+              ))
+            ) : (
+              <div className="text-xs text-gray-500 dark:text-gray-500 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-center">
+                <p className="mb-2">No conversations yet</p>
+                <p>Start a new chat to see your conversation history</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
