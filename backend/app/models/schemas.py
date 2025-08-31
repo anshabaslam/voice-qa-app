@@ -35,8 +35,6 @@ class QuestionInput(BaseModel):
     def validate_question(cls, v):
         if not v.strip():
             raise ValueError('Question cannot be empty')
-        if len(v.strip()) < 3:
-            raise ValueError('Question must be at least 3 characters long')
         return v.strip()
 
 class AnswerResponse(BaseModel):
