@@ -11,11 +11,13 @@ class Settings(BaseSettings):
     # AI Service Configuration (FREE options)
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
     
     # Free AI Options
+    USE_GROQ: bool = True
     USE_OLLAMA: bool = True
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama2"
+    OLLAMA_MODEL: str = "phi3:mini"
     
     HUGGINGFACE_API_KEY: str = ""
     HUGGINGFACE_MODEL: str = "microsoft/DialoGPT-medium"
@@ -48,6 +50,10 @@ class Settings(BaseSettings):
     @property
     def USE_ANTHROPIC(self) -> bool:
         return bool(self.ANTHROPIC_API_KEY)
+    
+    @property
+    def USE_GROQ_SERVICE(self) -> bool:
+        return bool(self.GROQ_API_KEY) and self.USE_GROQ
     
     @property
     def USE_ELEVENLABS(self) -> bool:

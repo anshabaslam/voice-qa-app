@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class FreeAIService:
     def __init__(self):
-        self.session = httpx.AsyncClient(timeout=30.0)
+        self.session = httpx.AsyncClient(timeout=20.0)  # Reasonable timeout for fast responses
         
     async def answer_question(self, question: str, context: List[Dict], session_id: Optional[str] = None) -> AnswerResponse:
         """Answer questions using free AI alternatives"""
@@ -26,33 +26,46 @@ class FreeAIService:
         
         # Method 1: Try Ollama (if running locally)
         if settings.USE_OLLAMA:
+            logger.info(f"🔥 Attempting Ollama with model: {settings.OLLAMA_MODEL}")
             try:
                 answer = await self._answer_with_ollama(question, context)
                 if answer:
+                    logger.info(f"🎉 Ollama SUCCESS! Generated {len(answer)} character response")
                     return AnswerResponse(
                         answer=answer,
                         sources=sources,
                         session_id=session_id,
                         confidence=0.8
                     )
+                else:
+                    logger.warning("❌ Ollama returned empty response")
             except Exception as e:
-                logger.warning(f"Ollama failed: {e}")
+                logger.error(f"❌ Ollama failed with error: {e}")
+        else:
+            logger.info("⚠️ Ollama is disabled in settings")
         
         # Method 2: Try HuggingFace Inference API (free tier)
         if settings.USE_HUGGINGFACE:
+            logger.info("🤗 Attempting HuggingFace...")
             try:
                 answer = await self._answer_with_huggingface(question, context)
                 if answer:
+                    logger.info(f"🎉 HuggingFace SUCCESS! Generated {len(answer)} character response")
                     return AnswerResponse(
                         answer=answer,
                         sources=sources,
                         session_id=session_id,
                         confidence=0.7
                     )
+                else:
+                    logger.warning("❌ HuggingFace returned empty response")
             except Exception as e:
-                logger.warning(f"HuggingFace failed: {e}")
+                logger.error(f"❌ HuggingFace failed with error: {e}")
+        else:
+            logger.info("⚠️ HuggingFace is disabled in settings")
         
         # Method 3: Simple keyword-based answering (always works)
+        logger.info("📝 Falling back to keyword-based analysis")
         answer = self._simple_keyword_answer(question, context)
         
         return AnswerResponse(
@@ -65,13 +78,26 @@ class FreeAIService:
     async def _answer_with_ollama(self, question: str, context: List[Dict]) -> Optional[str]:
         """Try to answer using local Ollama installation"""
         try:
-            context_text = self._prepare_context(context)
+            logger.info(f"🌐 Connecting to Ollama at {settings.OLLAMA_BASE_URL}")
             
-            prompt = f"""Context: {context_text}
+            # First test if Ollama is accessible
+            try:
+                test_response = await self.session.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+                logger.info(f"📡 Ollama connection test: {test_response.status_code}")
+            except Exception as conn_error:
+                logger.error(f"🚫 Cannot connect to Ollama: {conn_error}")
+                return None
+                
+            context_text = self._prepare_context(context)
+            logger.info(f"📄 Context prepared: {len(context_text)} characters")
+            
+            prompt = f"""Based on this information, answer the question in natural language:
+
+{context_text}
 
 Question: {question}
 
-Please provide a helpful answer based on the context above. If you cannot find the answer in the context, say so clearly."""
+Answer briefly and naturally:"""
 
             payload = {
                 "model": settings.OLLAMA_MODEL,
@@ -331,6 +357,19 @@ Please provide a helpful answer based on the context above. If you cannot find t
         # Remove any remaining duplicate phrases within the answer
         final_answer = self._remove_duplicate_phrases(clean_answer)
         
+        # Add a natural intro based on the question
+        if final_answer and len(final_answer.strip()) > 0:
+            question_lower = question.lower()
+            if 'who is' in question_lower or 'who was' in question_lower:
+                # Extract the subject name
+                subject = question_lower.replace('who is', '').replace('who was', '').strip()
+                if subject:
+                    final_answer = f"Based on the information provided, here's what I found about {subject}:\n\n{final_answer}"
+            elif 'what is' in question_lower or 'what was' in question_lower:
+                final_answer = f"Here's what I found about your question:\n\n{final_answer}"
+            elif '?' in question:
+                final_answer = f"Based on the extracted content, here's the answer to your question:\n\n{final_answer}"
+        
         logger.info(f"   - Generated clean answer: {len(final_answer)} characters")
         logger.info(f"   - Used {len(answer_sentences)} sentences from {len(used_sources)} sources")
         
@@ -368,14 +407,26 @@ Please provide a helpful answer based on the context above. If you cannot find t
         return '. '.join(unique_sentences)
     
     def _prepare_context(self, context: List[Dict]) -> str:
-        """Prepare context for AI models"""
+        """Prepare clean, concise context for AI models"""
         context_parts = []
-        for i, item in enumerate(context[:5], 1):  # Use up to 5 sources
+        for i, item in enumerate(context[:3], 1):  # Use only top 3 sources for speed
             title = item.get('title', 'Untitled')
-            content = item.get('content', '')[:2000]  # Use much more content (2000 chars)
-            url = item.get('url', '')
-            context_parts.append(f"Source {i} - {title} ({url}):\n{content}")
-        return "\n\n" + "="*50 + "\n\n".join(context_parts)
+            content = item.get('content', '')
+            
+            # Clean and drastically reduce content for speed
+            if content:
+                # Remove excessive whitespace
+                content = re.sub(r'\s+', ' ', content)
+                # Remove HTML-like artifacts
+                content = re.sub(r'<[^>]+>', '', content)
+                # Remove repetitive elements
+                content = re.sub(r'(\w+)\1{2,}', r'\1', content)
+                # Take only first 1000 chars per source for speed
+                content = content[:1000]
+                
+            context_parts.append(f"{title}: {content}")
+            
+        return "\n\n".join(context_parts)
     
     async def transcribe_audio(self, audio_data: bytes) -> str:
         """Simple fallback for audio transcription"""

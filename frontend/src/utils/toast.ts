@@ -1,4 +1,4 @@
-import { toast as sonnerToast, ExternalToast } from 'sonner';
+import { toast as sonnerToast, type ExternalToast } from 'sonner';
 
 interface ToastOptions extends ExternalToast {
   duration?: number;

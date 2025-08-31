@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+import re
 from typing import Optional, List, Dict
 from fastapi import UploadFile
 from app.models.schemas import AnswerResponse
@@ -24,6 +25,12 @@ except ImportError:
     ANTHROPIC_AVAILABLE = False
 
 try:
+    from groq import AsyncGroq
+    GROQ_AVAILABLE = True
+except ImportError:
+    GROQ_AVAILABLE = False
+
+try:
     import redis.asyncio as redis
     REDIS_AVAILABLE = True
 except ImportError:
@@ -33,6 +40,7 @@ class AIService:
     def __init__(self):
         self.openai_client = None
         self.anthropic_client = None
+        self.groq_client = None
         self.redis_client = None
         self.free_ai_service = FreeAIService()
         
@@ -42,6 +50,9 @@ class AIService:
         
         if ANTHROPIC_AVAILABLE and settings.USE_ANTHROPIC and settings.ANTHROPIC_API_KEY:
             self.anthropic_client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+        
+        if GROQ_AVAILABLE and settings.USE_GROQ_SERVICE and settings.GROQ_API_KEY:
+            self.groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
         
         # Initialize Redis if available and configured
         if REDIS_AVAILABLE and settings.USE_REDIS:
@@ -68,6 +79,7 @@ class AIService:
         # Log which services are available
         logger.info(f"   - OpenAI available: {self.openai_client is not None}")
         logger.info(f"   - Anthropic available: {self.anthropic_client is not None}")
+        logger.info(f"   - Groq available: {self.groq_client is not None}")
         
         # Try different AI services in order of preference
         try:
@@ -75,14 +87,19 @@ class AIService:
             if self.openai_client:
                 logger.info("🤖 Using OpenAI GPT service")
                 answer, sources = await self._answer_with_openai(question, context)
+            elif self.groq_client:
+                logger.info("⚡ Using Groq service (FAST)")
+                answer, sources = await self._answer_with_groq(question, context)
             elif self.anthropic_client:
                 logger.info("🤖 Using Anthropic Claude service")
                 answer, sources = await self._answer_with_anthropic(question, context)
             else:
                 # Use free AI service as fallback
-                logger.info("🆓 Using free AI service")
+                logger.info("🆓 Using free AI service (includes Ollama)")
+                logger.info(f"🔧 Ollama settings - USE_OLLAMA: {settings.USE_OLLAMA}, Model: {settings.OLLAMA_MODEL}, URL: {settings.OLLAMA_BASE_URL}")
                 result = await self.free_ai_service.answer_question(question, context, session_id)
                 answer, sources = result.answer, result.sources
+                logger.info(f"✅ Free AI service returned answer: {len(answer)} characters")
         
         except Exception as e:
             logger.error(f"❌ Primary AI service failed: {e}")
@@ -114,18 +131,19 @@ class AIService:
             messages = [
                 {
                     "role": "system",
-                    "content": """You are an expert researcher and writer who provides comprehensive, accurate answers based on web content.
+                    "content": """You are a helpful AI assistant who provides clear, natural answers based on web content.
 
                     INSTRUCTIONS:
-                    1. Provide complete, detailed answers using the full context provided
-                    2. Write in clear, well-structured paragraphs with proper formatting
+                    1. Answer in a conversational, natural tone as if speaking to a friend
+                    2. Write in clear, well-structured paragraphs 
                     3. Include specific facts, dates, names, and details from the sources
-                    4. If information is incomplete, clearly state what is missing
+                    4. If information is incomplete, politely mention what's missing
                     5. Only use information directly found in the provided context
-                    6. Structure your answer logically with clear explanations
-                    7. Be comprehensive - don't truncate important information
+                    6. Organize your response logically and make it easy to read
+                    7. Avoid including raw HTML, navigation text, or website formatting
+                    8. Focus on being helpful and informative in plain language
                     
-                    FORMAT: Provide a detailed, well-formatted answer that fully addresses the question."""
+                    FORMAT: Provide a natural, conversational answer that directly addresses the question."""
                 },
                 {
                     "role": "user",
@@ -149,27 +167,71 @@ class AIService:
             logger.error(f"OpenAI API error: {e}")
             raise ValueError(f"Failed to generate answer: {str(e)}")
     
+    async def _answer_with_groq(self, question: str, context: List[Dict]) -> tuple[str, List[str]]:
+        try:
+            context_text = self._prepare_context(context)
+            
+            messages = [
+                {
+                    "role": "system",
+                    "content": """You are a helpful AI assistant who provides clear, natural answers based on web content.
+
+                    INSTRUCTIONS:
+                    1. Answer in a conversational, natural tone as if speaking to a friend
+                    2. Write in clear, well-structured paragraphs 
+                    3. Include specific facts, dates, names, and details from the sources
+                    4. If information is incomplete, politely mention what's missing
+                    5. Only use information directly found in the provided context
+                    6. Organize your response logically and make it easy to read
+                    7. Avoid including raw HTML, navigation text, or website formatting
+                    8. Focus on being helpful and informative in plain language
+                    
+                    FORMAT: Provide a natural, conversational answer that directly addresses the question."""
+                },
+                {
+                    "role": "user",
+                    "content": f"Context:\n{context_text}\n\nQuestion: {question}"
+                }
+            ]
+            
+            response = await self.groq_client.chat.completions.create(
+                model="llama-3.1-8b-instant",  # Fast Groq model
+                messages=messages,
+                max_tokens=1000,
+                temperature=0.7
+            )
+            
+            answer = response.choices[0].message.content.strip()
+            sources = [item["url"] for item in context]
+            
+            return answer, sources
+            
+        except Exception as e:
+            logger.error(f"Groq API error: {e}")
+            raise ValueError(f"Failed to generate answer: {str(e)}")
+
     async def _answer_with_anthropic(self, question: str, context: List[Dict]) -> tuple[str, List[str]]:
         try:
             context_text = self._prepare_context(context)
             
-            prompt = f"""You are an expert researcher and writer who provides comprehensive, accurate answers based on web content.
+            prompt = f"""You are a helpful AI assistant who provides clear, natural answers based on web content.
 
             INSTRUCTIONS:
-            1. Provide complete, detailed answers using the full context provided
-            2. Write in clear, well-structured paragraphs with proper formatting
+            1. Answer in a conversational, natural tone as if speaking to a friend
+            2. Write in clear, well-structured paragraphs
             3. Include specific facts, dates, names, and details from the sources
-            4. If information is incomplete, clearly state what is missing
+            4. If information is incomplete, politely mention what's missing
             5. Only use information directly found in the provided context
-            6. Structure your answer logically with clear explanations
-            7. Be comprehensive - don't truncate important information
+            6. Organize your response logically and make it easy to read
+            7. Avoid including raw HTML, navigation text, or website formatting
+            8. Focus on being helpful and informative in plain language
 
             Context:
             {context_text}
 
             Question: {question}
 
-            Please provide a detailed, well-formatted answer that fully addresses the question based on the context above."""
+            Please provide a natural, conversational answer that directly addresses the question based on the context above."""
             
             response = await self.anthropic_client.messages.create(
                 model="claude-3-sonnet-20240229",
@@ -189,11 +251,23 @@ class AIService:
     def _prepare_context(self, context: List[Dict]) -> str:
         context_parts = []
         for i, item in enumerate(context, 1):
-            # Use much more content for comprehensive analysis (up to 8000 chars per source)
-            content = item['content'][:8000]  # Significantly increased
-            if len(item['content']) > 8000:
-                content += "..."
-            context_parts.append(f"Source {i} ({item['url']}):\nTitle: {item['title']}\nContent: {content}\n")
+            content = item['content']
+            title = item['title']
+            
+            # Clean the content for better AI consumption
+            if content:
+                # Remove excessive whitespace
+                content = re.sub(r'\s+', ' ', content)
+                # Remove HTML-like artifacts  
+                content = re.sub(r'<[^>]+>', '', content)
+                # Remove repetitive elements
+                content = re.sub(r'(\w+)\1{2,}', r'\1', content)
+                # Use up to 4000 chars per source for good context
+                content = content[:4000]
+                if len(item['content']) > 4000:
+                    content += "..."
+                    
+            context_parts.append(f"Article {i}: {title}\nContent: {content}\n")
         return "\n".join(context_parts)
     
     async def transcribe_audio(self, audio_file: UploadFile) -> str:
