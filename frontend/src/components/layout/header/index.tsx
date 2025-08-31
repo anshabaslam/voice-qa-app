@@ -3,7 +3,6 @@ import {
   BookOpenIcon,
   Bars3Icon,
   MoonIcon,
-  MagnifyingGlassIcon,
   Cog6ToothIcon,
   SunIcon,
   XMarkIcon,
@@ -22,13 +21,11 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ toggleSidebar, onPageChange }) => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAvatarPopoverOpen, setIsAvatarPopoverOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const avatarRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const desktopSearchRef = useRef<HTMLInputElement>(null);
-  const mobileSearchRef = useRef<HTMLInputElement>(null);
   const { user, logout } = useAuth();
 
   // Close popover when clicking outside
@@ -48,31 +45,13 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, onPageChange }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle "/" key press for search focus
+  // Update time every second
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Check if "/" key is pressed and not in an input field
-      if (
-        event.key === "/" &&
-        !["INPUT", "TEXTAREA"].includes((event.target as HTMLElement).tagName)
-      ) {
-        event.preventDefault();
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
 
-        // Focus desktop search on larger screens, mobile search on smaller screens
-        if (window.innerWidth >= 768) {
-          desktopSearchRef.current?.focus();
-        } else {
-          setIsSearchOpen(true);
-          // Use setTimeout to ensure the mobile search input is rendered
-          setTimeout(() => {
-            mobileSearchRef.current?.focus();
-          }, 100);
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => clearInterval(timer);
   }, []);
 
   const handleAvatarClick = () => {
@@ -93,49 +72,27 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, onPageChange }) => {
               <Bars3Icon className="w-5 h-5" />
             </button>
 
-            {/* Desktop Search Bar - Enhanced with blur and transparency */}
-            <div className="relative hidden md:block">
-              <div className="relative group">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-dark-400 w-4 h-4 z-10 transition-colors" />
-                <input
-                  ref={desktopSearchRef}
-                  type="text"
-                  placeholder="Search here..."
-                  className="pl-10 pr-12 py-2.5 w-64 lg:w-80 text-sm 
-                           bg-white/60 dark:bg-dark-800/60 
-                           backdrop-blur-xl backdrop-saturate-150
-                           border border-gray-200/50 dark:border-dark-500/50 
-                           rounded-xl shadow-sm
-                           focus:outline-none focus:ring-1 focus:ring-gray-300/40 focus:border-gray-300/60
-                           dark:focus:ring-dark-500/40 dark:focus:border-dark-500/60
-                           focus:bg-white/80 dark:focus:bg-dark-800/80
-                           text-gray-900 dark:text-white 
-                           placeholder-gray-400 dark:placeholder-dark-400
-                           transition-all 150ms ease-in-out
-                           hover:bg-white/70 dark:hover:bg-dark-800/70
-                           hover:border-gray-300/60 dark:hover:border-dark-500/60"
-                />
-                <kbd
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 
-                               text-xs text-gray-400 dark:text-dark-400 
-                               bg-gray-100/80 dark:bg-dark-600/80 
-                               backdrop-blur-sm
-                               px-2 py-1 rounded-md
-                               border border-gray-200/50 dark:border-dark-500/50
-                               transition-all 150ms ease-in-out"
-                >
-                  /
-                </kbd>
+            {/* Live Time Display */}
+            <div className="flex items-center">
+              <div className="px-4 py-2.5 w-52 bg-white/60 dark:bg-dark-800/60 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-dark-500/50 rounded-xl shadow-sm transition-all 150ms ease-in-out">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-900 dark:text-white font-mono">
+                    {currentTime.toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true
+                    })}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {currentTime.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
               </div>
             </div>
-
-            {/* Mobile Search Button */}
-            <button
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2 rounded-lg text-gray-500 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors md:hidden"
-            >
-              <MagnifyingGlassIcon className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Right Section */}
@@ -227,31 +184,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, onPageChange }) => {
           </div>
         </div>
 
-        {/* Mobile Search Bar - Enhanced with blur and transparency */}
-        {isSearchOpen && (
-          <div className="px-4 pb-4 md:hidden border-t border-gray-200/70 dark:border-dark-700/70 bg-gradient-to-b from-transparent to-white/50 dark:to-dark-900/50 backdrop-blur-sm">
-            <div className="relative mt-3 group">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-dark-400 w-4 h-4 z-10 transition-colors" />
-              <input
-                ref={mobileSearchRef}
-                type="text"
-                placeholder="Search here..."
-                className="pl-10 pr-4 py-2.5 w-full text-sm 
-                         bg-white/70 dark:bg-dark-800/70 
-                         backdrop-blur-xl backdrop-saturate-150
-                         border border-gray-200/50 dark:border-dark-600/50 
-                         rounded-xl shadow-sm
-                         focus:outline-none focus:ring-1 focus:ring-gray-300/40 focus:border-gray-300/60
-                         dark:focus:ring-dark-500/40 dark:focus:border-dark-500/60
-                         focus:bg-white/80 dark:focus:bg-dark-800/80
-                         text-gray-900 dark:text-white 
-                         placeholder-gray-400 dark:placeholder-dark-400
-                         transition-all duration-200 ease-out"
-                autoFocus
-              />
-            </div>
-          </div>
-        )}
 
         {/* Mobile Action Menu */}
         {isMobileMenuOpen && (
