@@ -14,21 +14,6 @@ export function DocumentationPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       <div className="max-w-5xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-              <BookOpenIcon className="w-8 h-8" />
-            </div>
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Voice Q&A Documentation
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-            Transform any web content into an interactive knowledge base. Ask questions using your voice and get AI-powered answers with citations.
-          </p>
-        </div>
-
         {/* Table of Contents */}
         <div className="mb-16 p-6 bg-white dark:bg-dark-800 rounded-2xl border border-gray-300 dark:border-dark-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -83,7 +68,7 @@ export function DocumentationPage() {
               </p>
               <ol className="list-decimal list-inside space-y-3 text-gray-600 dark:text-gray-400 ml-6 text-lg">
                 <li>Navigate to the Voice Q&A page</li>
-                <li>Add at least 3 web URLs in the Content Sources section</li>
+                <li>Add at least 1 web URLs in the Content Sources section</li>
                 <li>Wait for content extraction to complete</li>
                 <li>Verify the content has been processed successfully</li>
               </ol>

@@ -42,7 +42,7 @@ export function DocsSidebar({ isOpen, onClose }: DocsSidebarProps): any {
           title: 'Quick Start Guide',
           items: [
             'Navigate to the Voice Q&A page',
-            'Add at least 3 web URLs in the Content Sources section',
+            'Add at least 1 web URLs in the Content Sources section',
             'Wait for content extraction to complete',
             'Click the microphone to start voice recording',
             'Ask your question clearly',

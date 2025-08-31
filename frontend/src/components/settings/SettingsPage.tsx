@@ -191,20 +191,27 @@ export function SettingsPage() {
                       Available Voices
                     </label>
                     <div className="space-y-4">
-                      <select
-                        value={settings.selectedVoice}
-                        onChange={(e) => {
-                          updateSettings({ selectedVoice: e.target.value, provider: 'elevenlabs' });
-                        }}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
-                      >
-                        <option value="">Select a voice...</option>
-                        {voices.map((voice) => (
-                          <option key={voice.id} value={voice.id}>
-                            {voice.name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={settings.selectedVoice}
+                          onChange={(e) => {
+                            updateSettings({ selectedVoice: e.target.value, provider: 'elevenlabs' });
+                          }}
+                          className="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white appearance-none"
+                        >
+                          <option value="">Select a voice...</option>
+                          {voices.map((voice) => (
+                            <option key={voice.id} value={voice.id}>
+                              {voice.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
                       {voices.length === 0 && !loadingVoices && (
                         <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
                           <div className="flex items-start gap-3">

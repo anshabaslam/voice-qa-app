@@ -790,15 +790,6 @@ export function AnalyticsPage() {
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 dark:bg-black min-h-screen text-gray-900 dark:text-white">
-      {/* Floating Documentation Button */}
-      <button
-        onClick={() => setIsDocsSidebarOpen(true)}
-        className="fixed bottom-6 right-6 z-30 flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-        title="Open Documentation"
-      >
-        <QuestionMarkCircleIcon className="w-6 h-6" />
-      </button>
-
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left Section - Main Content */}
         <div className="xl:col-span-3 space-y-6">
