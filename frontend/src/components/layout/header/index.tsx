@@ -1,6 +1,6 @@
 import {
   BellIcon,
-  ArrowDownTrayIcon,
+  BookOpenIcon,
   Bars3Icon,
   MoonIcon,
   MagnifyingGlassIcon,
@@ -16,9 +16,10 @@ import AvatarModal from "./components/AvatarModal";
 
 interface HeaderProps {
   toggleSidebar: () => void;
+  onPageChange: (page: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
+const Header: React.FC<HeaderProps> = ({ toggleSidebar, onPageChange }) => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -155,9 +156,13 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 )}
               </button>
 
-              {/* Download */}
-              <button className="p-2 rounded-lg text-gray-500 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-                <ArrowDownTrayIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              {/* Documentation */}
+              <button 
+                onClick={() => onPageChange('documentation')}
+                className="p-2 rounded-lg text-gray-500 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
+                title="View Documentation"
+              >
+                <BookOpenIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
               </button>
 
               {/* Settings */}
@@ -268,10 +273,16 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 <span className="text-xs">Theme</span>
               </button>
 
-              {/* Download */}
-              <button className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-500 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-                <ArrowDownTrayIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                <span className="text-xs">Download</span>
+              {/* Documentation */}
+              <button 
+                onClick={() => {
+                  onPageChange('documentation');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-500 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
+              >
+                <BookOpenIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <span className="text-xs">Docs</span>
               </button>
 
               {/* Settings */}
