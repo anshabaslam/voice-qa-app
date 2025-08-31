@@ -11,6 +11,7 @@ interface VoiceContextType {
   settings: VoiceSettings;
   updateSettings: (settings: Partial<VoiceSettings>) => void;
   speak: (text: string) => Promise<void>;
+  stopSpeaking: () => void;
 }
 
 const defaultSettings: VoiceSettings = {
@@ -22,6 +23,7 @@ const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
 
 export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<VoiceSettings>(defaultSettings);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     // Load settings from localStorage
@@ -44,8 +46,29 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('voice-qa-settings', JSON.stringify(updatedSettings));
   };
 
+  const stopSpeaking = () => {
+    console.log('🛑 Stopping current speech...');
+    
+    // Stop current audio if playing
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
+      console.log('✅ Stopped current audio');
+    }
+    
+    // Stop browser TTS
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      console.log('✅ Stopped browser TTS');
+    }
+  };
+
   const speak = async (text: string): Promise<void> => {
     if (!text.trim()) return;
+
+    // Stop any currently playing speech before starting new one
+    stopSpeaking();
 
     console.log('🗣️ VoiceContext.speak() called:');
     console.log('  - Text length:', text.length);
@@ -76,6 +99,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Got audio URL, playing with ElevenLabs voice');
         // Play the generated audio from backend with cache busting
         const audio = new Audio();
+        setCurrentAudio(audio);
         
         // Prevent caching
         audio.preload = 'none';
@@ -103,6 +127,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
           audio.onended = () => {
             clearTimeout(timeout);
             console.log('✅ ElevenLabs audio finished playing');
+            setCurrentAudio(null);
             resolve();
           };
           
@@ -142,6 +167,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     settings,
     updateSettings,
     speak,
+    stopSpeaking,
   };
 
   return (

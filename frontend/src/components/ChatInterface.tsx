@@ -22,10 +22,10 @@ export function ChatInterface() {
   const [shakeMessageId, setShakeMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentAnswer, currentQuestion, voiceState, sessionId, extractedContent, setCurrentAnswer, setLoading, setError } = useAppStore();
-  const { speak, settings } = useVoice();
+  const { speak, settings, stopSpeaking } = useVoice();
   const { isSupported, isRecording, isProcessing, audioLevel, transcript, startRecording, stopRecording } = useVoiceRecording();
   const voiceIsProcessing = voiceState.isProcessing;
-  const hasContentSources = extractedContent.length >= 3;
+  const hasContentSources = extractedContent.length > 0;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -109,8 +109,22 @@ export function ChatInterface() {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, newMessage]);
+      
+      // Automatically read the AI response aloud
+      const readResponse = async () => {
+        try {
+          console.log('Auto-playing AI response with voice:', settings.selectedVoice);
+          await speak(currentAnswer.answer);
+        } catch (error) {
+          console.error('Auto TTS failed:', error);
+          // Don't show error toast for auto-play failures to avoid interrupting user experience
+        }
+      };
+      
+      // Small delay to ensure message is rendered before starting TTS
+      setTimeout(readResponse, 500);
     }
-  }, [currentAnswer]);
+  }, [currentAnswer, speak, settings.selectedVoice]);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;

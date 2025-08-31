@@ -110,15 +110,6 @@ export function VoiceQAPage() {
 
   return (
     <div className="h-[90vh] bg-white dark:bg-black flex overflow-hidden">
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center space-x-3">
-            <LoadingSpinner size="md" />
-            <span className="text-gray-700 dark:text-gray-300">Processing...</span>
-          </div>
-        </div>
-      )}
 
       {/* Sidebar */}
       <div className={`${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 overflow-hidden bg-white dark:bg-transparent text-gray-900 dark:text-white flex flex-col border-r border-gray-200 dark:border-gray-800`}>
