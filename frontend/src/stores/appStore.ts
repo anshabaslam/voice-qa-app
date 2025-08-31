@@ -29,7 +29,7 @@ interface AppStore extends AppState {
 }
 
 const initialState: AppState = {
-  urls: ['', '', ''], // Start with 3 empty URLs
+  urls: [], // Start with no URLs
   extractedContent: [],
   currentQuestion: '',
   currentAnswer: null,
@@ -60,7 +60,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
   
   clearUrls: () => {
-    set({ urls: ['', '', ''] });
+    set({ urls: [] });
   },
   
   setExtractedContent: (content: ExtractedContent[]) => {
