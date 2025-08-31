@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -47,7 +47,20 @@ function AppContent() {
   return (
     <ErrorBoundary>
       <DashboardLayout currentPage={currentPage} onPageChange={setCurrentPage}>
-        <Toaster position="top-right" />
+        <Toaster 
+          position="top-right"
+          closeButton
+          richColors
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: 'rgb(31 41 55)',
+              border: '1px solid rgb(75 85 99)',
+              color: 'rgb(243 244 246)',
+            },
+            className: 'sonner-toast',
+          }}
+        />
         {renderCurrentPage()}
       </DashboardLayout>
     </ErrorBoundary>

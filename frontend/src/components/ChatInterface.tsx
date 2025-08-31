@@ -4,7 +4,7 @@ import { useAppStore } from '../stores/appStore';
 import { useVoice } from '../contexts/VoiceContext';
 import { useVoiceRecording } from '../hooks/useVoiceRecording';
 import { apiService } from '../services/api';
-import toast from 'react-hot-toast';
+import { toast } from '../utils/toast';
 
 interface Message {
   id: string;
@@ -387,7 +387,7 @@ export function ChatInterface() {
                 </div>
               )}
               
-              <div className="flex items-end gap-3 bg-gray-100 dark:bg-gray-700 rounded-2xl p-3">
+              <div className="flex items-end gap-3 bg-gray-200 dark:bg-gray-800 rounded-3xl p-3">
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
@@ -401,12 +401,6 @@ export function ChatInterface() {
               
               {/* Action Buttons */}
               <div className="flex items-center gap-1 flex-shrink-0">
-                <button 
-                  className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-                  title="Attach file"
-                >
-                  <PhotoIcon className="w-4 h-4" />
-                </button>
                 
                 {/* Voice Recording Button with Animation */}
                 <button 
@@ -436,15 +430,15 @@ export function ChatInterface() {
                   )}
                 </button>
                 
-                {inputValue.trim() && (
-                  <button
-                    onClick={handleSendMessage}
-                    className="p-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                    title="Send message"
-                  >
-                    <PaperAirplaneIcon className="w-4 h-4" />
-                  </button>
-                )}
+                {/* Always show send button */}
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim()}
+                  className="p-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  title="Send message"
+                >
+                  <PaperAirplaneIcon className="w-4 h-4" />
+                </button>
               </div>
             </div>
             </div>

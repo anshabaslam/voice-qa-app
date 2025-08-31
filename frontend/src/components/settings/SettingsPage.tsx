@@ -6,7 +6,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { LoadingSpinner } from '../LoadingSpinner';
 import { apiService } from '../../services/api';
-import toast from 'react-hot-toast';
+import { toast } from '../../utils/toast';
 
 export function SettingsPage() {
   const { settings, updateSettings } = useVoice();
