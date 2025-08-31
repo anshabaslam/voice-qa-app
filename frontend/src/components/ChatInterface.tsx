@@ -47,7 +47,7 @@ export function ChatInterface() {
       if (!hasContentSources) {
         // Create a mock response asking to add content sources with unique timestamp
         const mockResponse = {
-          answer: "Please add at least 3 content sources from the sidebar to get accurate answers. I need web content to provide you with relevant information.",
+          answer: "Please add content sources from the sidebar to get accurate answers. I need web content to provide you with relevant information.",
           sources: [],
           session_id: sessionId || 'no-session',
           confidence: 0,
@@ -213,12 +213,18 @@ export function ChatInterface() {
       <div className="flex-1 overflow-y-auto min-h-0">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500 dark:text-gray-400 max-w-md">
-              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-3">
-                <MicrophoneIcon className="w-6 h-6" />
+            <div className="text-center max-w-4xl px-6">
+              <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent leading-tight">
+                Welcome, Anshab
+              </h1>
+              <p className="text-2xl md:text-4xl font-semibold text-gray-400 dark:text-gray-400 mb-6">
+                May I be of assistance today?
+              </p>
+              <div className="max-w-md mx-auto">
+                <p className="text-sm text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-dark-800 rounded-lg px-4 py-3 border border-gray-200 dark:border-dark-700">
+                  💡 <strong>Getting Started:</strong> Add content sources from the sidebar to get AI-powered answers based on your web content.
+                </p>
               </div>
-              <p className="text-sm font-medium">Start a conversation</p>
-              <p className="text-xs mt-1">Ask questions using voice or text</p>
             </div>
           </div>
         )}
@@ -260,7 +266,7 @@ export function ChatInterface() {
                   {!message.isUser && !hasContentSources && (
                     <div className="mb-4 pb-2 border-b border-orange-200 dark:border-orange-800">
                       <div className="text-xs text-orange-400 font-medium">
-                        ⚠️ Add at least 3 content sources for more accurate answers
+                        ⚠️ Add more content sources for more accurate answers
                       </div>
                     </div>
                   )}
@@ -387,7 +393,7 @@ export function ChatInterface() {
                 </div>
               )}
               
-              <div className="flex items-end gap-3 bg-gray-200 dark:bg-gray-800 rounded-3xl p-3">
+              <div className="flex items-end gap-3 bg-gray-200 dark:bg-dark-700 rounded-2xl p-3 px-4">
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}

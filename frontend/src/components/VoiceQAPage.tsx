@@ -37,13 +37,10 @@ export function VoiceQAPage() {
       setNewUrl('');
       setShowAddUrl(false);
       
-      // Check if we now have 3 URLs to auto-extract
+      // Auto-extract content immediately after adding URL
       const allUrls = [...urls, url];
-      if (allUrls.length >= 3) {
-        await handleAutoExtract(allUrls);
-      } else {
-        toast.success(`URL added. Add ${3 - allUrls.length} more URLs to start extraction.`);
-      }
+      await handleAutoExtract(allUrls);
+      toast.success(`URL added. Extracting content...`);
     } else {
       toast.error('Please enter a valid URL');
     }
@@ -52,7 +49,7 @@ export function VoiceQAPage() {
   const handleAutoExtract = async (urlsToExtract: string[]) => {
     const validUrls = urlsToExtract.filter(url => url.trim() && validateUrl(url.trim()));
     
-    if (validUrls.length < 3) {
+    if (validUrls.length < 1) {
       return;
     }
 
@@ -237,7 +234,7 @@ export function VoiceQAPage() {
               <div className="text-xs text-gray-500 dark:text-gray-500 p-3 border border-gray-300 dark:border-gray-700 rounded-lg">
                 <p className="mb-2">Add web sources to get started</p>
                 <p>Content will be extracted automatically when you add URLs</p>
-                <p>At least 3 URLs needed for Q&A</p>
+                <p>1-5 URLs allowed for Q&A</p>
               </div>
             )}
           </div>

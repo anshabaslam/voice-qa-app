@@ -6,10 +6,10 @@ class LinkInput(BaseModel):
     
     @validator('urls')
     def validate_urls(cls, v):
-        if len(v) < 3:
-            raise ValueError('At least 3 URLs are required')
-        if len(v) > 10:
-            raise ValueError('Maximum 10 URLs allowed')
+        if len(v) < 1:
+            raise ValueError('At least 1 URL is required')
+        if len(v) > 5:
+            raise ValueError('Maximum 5 URLs allowed')
         return v
 
 class ExtractedContent(BaseModel):
