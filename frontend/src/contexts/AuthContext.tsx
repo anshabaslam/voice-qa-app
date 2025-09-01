@@ -19,12 +19,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Hardcoded credentials for demo
 const DEMO_CREDENTIALS = {
-  username: 'admin',
-  password: 'admin123',
+  username: 'admin@vocalize.com',
+  password: 'Admin@123',
   user: {
     id: '1',
-    username: 'admin',
-    email: 'admin@voice-qa.com',
+    username: 'admin@vocalize.com',
+    email: 'admin@vocalize.com',
     name: 'Administrator'
   }
 };

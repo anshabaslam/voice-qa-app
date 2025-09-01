@@ -145,30 +145,40 @@ export function ChatInterface() {
   // Add AI response when answer updates
   useEffect(() => {
     if (currentAnswer && currentAnswer.answer && currentAnswer.answer.trim()) {
-      // Always create new message with unique timestamp
-      const newMessage: Message = {
-        id: Date.now().toString() + '-a-' + Math.random().toString(36).substring(7),
-        content: currentAnswer.answer,
-        isUser: false,
-        timestamp: new Date()
-      };
-      addMessageToCurrentChat(newMessage);
+      // Check if this answer already exists in the current chat messages
+      const currentMessages = getCurrentMessages();
+      const answerAlreadyExists = currentMessages.some(msg => 
+        !msg.isUser && msg.content === currentAnswer.answer
+      );
       
-      // Automatically read the AI response aloud
-      const readResponse = async () => {
-        try {
-          console.log('Auto-playing AI response with voice:', settings.selectedVoice);
-          await speak(currentAnswer.answer);
-        } catch (error) {
-          console.error('Auto TTS failed:', error);
-          // Don't show error toast for auto-play failures to avoid interrupting user experience
-        }
-      };
+      // Only add the message if it doesn't already exist
+      if (!answerAlreadyExists) {
+        const newMessage: Message = {
+          id: Date.now().toString() + '-a-' + Math.random().toString(36).substring(7),
+          content: currentAnswer.answer,
+          isUser: false,
+          timestamp: new Date()
+        };
+        addMessageToCurrentChat(newMessage);
+      }
       
-      // Small delay to ensure message is rendered before starting TTS
-      setTimeout(readResponse, 500);
+      // Only auto-play TTS if this is a new answer (not already in chat)
+      if (!answerAlreadyExists) {
+        const readResponse = async () => {
+          try {
+            console.log('Auto-playing AI response with voice:', settings.selectedVoice);
+            await speak(currentAnswer.answer);
+          } catch (error) {
+            console.error('Auto TTS failed:', error);
+            // Don't show error toast for auto-play failures to avoid interrupting user experience
+          }
+        };
+        
+        // Small delay to ensure message is rendered before starting TTS
+        setTimeout(readResponse, 500);
+      }
     }
-  }, [currentAnswer, speak, settings.selectedVoice]);
+  }, [currentAnswer, speak, settings.selectedVoice, getCurrentMessages]);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
