@@ -104,7 +104,7 @@ const ActivityChart = () => {
     <div className="ax-transparent-gridline2">
       <div className="flex h-8 min-w-0 items-center justify-between mb-4">
         <h2 className="truncate font-medium tracking-wide text-gray-800 dark:text-dark-100">
-          Voice Q&A Activity Overview
+          Activity Overview
         </h2>
       </div>
       <Chart
@@ -258,52 +258,6 @@ const Stats = () => {
   );
 };
 
-// Welcome Banner Component
-const WelcomeBanner = () => {
-  return (
-    <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div className="relative flex flex-col overflow-hidden rounded-lg bg-gradient-to-br from-info to-info-darker p-3.5">
-        <p className="text-xs uppercase text-sky-100">Total Questions</p>
-        <div className="flex items-end justify-between space-x-2">
-          <p className="mt-4 text-2xl font-medium text-white">2,456</p>
-          <a
-            href="#"
-            className="truncate border-b border-dotted border-current pb-0.5 text-xs font-medium text-sky-100 outline-hidden transition-colors duration-300 hover:text-white focus:text-white"
-          >
-            View Details
-          </a>
-        </div>
-        <div className="mask is-reuleaux-triangle absolute right-0 top-0 -m-3 size-16 bg-white/20"></div>
-      </div>
-      <div className="relative flex flex-col overflow-hidden rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 p-3.5">
-        <p className="text-xs uppercase text-amber-50">Active Sessions</p>
-        <div className="flex items-end justify-between space-x-2">
-          <p className="mt-4 text-2xl font-medium text-white">847</p>
-          <a
-            href="#"
-            className="truncate border-b border-dotted border-current pb-0.5 text-xs font-medium text-amber-50 outline-hidden transition-colors duration-300 hover:text-white focus:text-white"
-          >
-            View Details
-          </a>
-        </div>
-        <div className="mask is-diamond absolute right-0 top-0 -m-3 size-16 bg-white/20"></div>
-      </div>
-      <div className="relative flex flex-col overflow-hidden rounded-lg bg-gradient-to-br from-rose-500 to-rose-700 p-3.5">
-        <p className="text-xs uppercase text-pink-100">Success Rate</p>
-        <div className="flex items-end justify-between space-x-2">
-          <p className="mt-4 text-2xl font-medium text-white">94.2%</p>
-          <a
-            href="#"
-            className="truncate border-b border-dotted border-current pb-0.5 text-xs font-medium text-pink-100 outline-hidden transition-colors duration-300 hover:text-white focus:text-white"
-          >
-            View Details
-          </a>
-        </div>
-        <div className="mask is-hexagon-2 absolute right-0 top-0 -m-3 size-16 bg-white/20"></div>
-      </div>
-    </div>
-  );
-};
 
 // Current Rating Component
 const CurrentRating = () => {
@@ -714,11 +668,11 @@ const RecentActivitiesTable = () => {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-400 dark:divide-gray-500">
+            <tbody className="divide-y divide-gray-300 dark:divide-dark-700">
               {filteredData.map((activity) => (
                 <React.Fragment key={activity.id}>
                   <tr 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer border-b border-gray-400 dark:border-gray-500"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                     onClick={() => handleRowClick(activity)}
                   >
                     {columns.map((column, colIndex) => (
@@ -793,9 +747,6 @@ export function AnalyticsPage() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left Section - Main Content */}
         <div className="xl:col-span-3 space-y-6">
-          {/* Welcome Section */}
-          <WelcomeBanner />
-
           <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2 lg:gap-6">
             <ActivityChart />
             <Stats />
