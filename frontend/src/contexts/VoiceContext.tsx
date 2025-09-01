@@ -12,6 +12,8 @@ interface VoiceContextType {
   updateSettings: (settings: Partial<VoiceSettings>) => void;
   speak: (text: string) => Promise<void>;
   stopSpeaking: () => void;
+  registerExternalAudio: (audio: HTMLAudioElement) => void;
+  unregisterExternalAudio: (audio: HTMLAudioElement) => void;
 }
 
 const defaultSettings: VoiceSettings = {
@@ -24,6 +26,7 @@ const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
 export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<VoiceSettings>(defaultSettings);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [externalAudios, setExternalAudios] = useState<Set<HTMLAudioElement>>(new Set());
 
   useEffect(() => {
     // Load settings from localStorage
@@ -46,6 +49,18 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('voice-qa-settings', JSON.stringify(updatedSettings));
   };
 
+  const registerExternalAudio = (audio: HTMLAudioElement) => {
+    setExternalAudios(prev => new Set(prev).add(audio));
+  };
+
+  const unregisterExternalAudio = (audio: HTMLAudioElement) => {
+    setExternalAudios(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(audio);
+      return newSet;
+    });
+  };
+
   const stopSpeaking = () => {
     console.log('🛑 Stopping current speech...');
     
@@ -56,6 +71,16 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       setCurrentAudio(null);
       console.log('✅ Stopped current audio');
     }
+    
+    // Stop all external audio instances
+    externalAudios.forEach(audio => {
+      if (audio && !audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
+        console.log('✅ Stopped external audio');
+      }
+    });
+    setExternalAudios(new Set());
     
     // Stop browser TTS
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -139,13 +164,13 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
             }).catch(reject);
           };
           
-          audio.onerror = (e) => {
+          audio.onerror = (e:any) => {
             clearTimeout(timeout);
             console.error('🚨 Audio playback error:', e);
             console.error('  - Audio src:', audio.src);
             console.error('  - Audio readyState:', audio.readyState);
             console.error('  - Audio networkState:', audio.networkState);
-            reject(new Error(`Failed to play audio: ${e.type}`));
+            reject(new Error(`Failed to play audio: ${e.type || 'unknown'}`));
           };
           
           audio.src = cacheBustUrl;
@@ -168,6 +193,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     updateSettings,
     speak,
     stopSpeaking,
+    registerExternalAudio,
+    unregisterExternalAudio,
   };
 
   return (

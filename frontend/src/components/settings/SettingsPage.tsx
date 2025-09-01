@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useVoice } from '../../contexts/VoiceContext';
 import {
   PlayIcon,
@@ -10,15 +10,27 @@ import { apiService } from '../../services/api';
 import { toast } from '../../utils/toast';
 
 export function SettingsPage() {
-  const { settings, updateSettings } = useVoice();
+  const { settings, updateSettings, stopSpeaking, registerExternalAudio, unregisterExternalAudio } = useVoice();
   const [isTestingVoice, setIsTestingVoice] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [voices, setVoices] = useState<{ id: string; name: string; preview_url?: string; description?: string }[]>([]);
   const [loadingVoices, setLoadingVoices] = useState(true);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     loadVoices();
   }, []);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        unregisterExternalAudio(currentAudioRef.current);
+        currentAudioRef.current = null;
+      }
+    };
+  }, [unregisterExternalAudio]);
 
   const loadVoices = async () => {
     try {
@@ -39,6 +51,13 @@ export function SettingsPage() {
       return;
     }
 
+    // Stop any existing audio first
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    stopSpeaking();
+
     setIsTestingVoice(true);
     
     // Get voice info
@@ -54,7 +73,9 @@ export function SettingsPage() {
       if (selectedVoice?.preview_url) {
         console.log('Using preview URL:', selectedVoice.preview_url);
         
-        const audio:any = new Audio();
+        const audio = new Audio();
+        currentAudioRef.current = audio;
+        registerExternalAudio(audio);
         
         await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => reject(new Error('Audio load timeout')), 10000);
@@ -66,16 +87,24 @@ export function SettingsPage() {
           
           audio.onended = () => {
             clearTimeout(timeout);
+            if (currentAudioRef.current) {
+              unregisterExternalAudio(currentAudioRef.current);
+            }
+            currentAudioRef.current = null;
             resolve(true);
           };
           
           audio.onerror = (e:any) => {
             clearTimeout(timeout);
             console.error('Audio error:', e);
+            if (currentAudioRef.current) {
+              unregisterExternalAudio(currentAudioRef.current);
+            }
+            currentAudioRef.current = null;
             reject(new Error('Failed to load preview audio'));
           };
           
-          audio.src = selectedVoice.preview_url;
+          audio.src = selectedVoice.preview_url!;
         });
         
         toast.success(`Voice test completed with ${voiceName} (Preview)`);
@@ -88,6 +117,8 @@ export function SettingsPage() {
         
         if (response.audio_url) {
           const audio = new Audio();
+          currentAudioRef.current = audio;
+          registerExternalAudio(audio);
           audio.preload = 'none';
           audio.crossOrigin = 'anonymous';
           
@@ -107,11 +138,19 @@ export function SettingsPage() {
             
             audio.onended = () => {
               clearTimeout(timeout);
+              if (currentAudioRef.current) {
+                unregisterExternalAudio(currentAudioRef.current);
+              }
+              currentAudioRef.current = null;
               resolve(true);
             };
             
             audio.onerror = () => {
               clearTimeout(timeout);
+              if (currentAudioRef.current) {
+                unregisterExternalAudio(currentAudioRef.current);
+              }
+              currentAudioRef.current = null;
               reject(new Error('Failed to load generated audio'));
             };
             
@@ -127,6 +166,10 @@ export function SettingsPage() {
     } catch (error: any) {
       console.error('Voice test error:', error);
       toast.error(`Voice test failed: ${error.message || 'Unknown error'}`);
+      if (currentAudioRef.current) {
+        unregisterExternalAudio(currentAudioRef.current);
+      }
+      currentAudioRef.current = null;
     } finally {
       setTimeout(() => setIsTestingVoice(false), 2000);
     }
