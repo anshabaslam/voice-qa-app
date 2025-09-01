@@ -53,6 +53,8 @@ export interface ChatSession {
   lastMessage: string;
   timestamp: Date | string;
   sessionId?: string;
+  extractedContent?: ExtractedContent[];
+  urls?: string[];
 }
 
 export interface AnalyticsMetrics {

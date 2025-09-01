@@ -68,6 +68,16 @@ const createDummyChatHistory = (): ChatSession[] => {
       ],
       lastMessage: 'React Hooks are functions that let you use state and other React features...',
       timestamp: new Date(now.getTime() - 2 * 60 * 1000),
+      extractedContent: [
+        {
+          url: 'https://react.dev/reference/react',
+          title: 'React Documentation - Hooks API',
+          content: 'React Hooks are functions that allow you to hook into React state and lifecycle features from function components. They let you use state and other React features without writing a class.',
+          success: true,
+          word_count: 1250
+        }
+      ],
+      urls: ['https://react.dev/reference/react', 'https://react.dev/learn/state-a-components-memory', 'https://react.dev/learn/using-the-effect-hook']
     },
     {
       id: 'dummy-2',
@@ -88,6 +98,16 @@ const createDummyChatHistory = (): ChatSession[] => {
       ],
       lastMessage: 'Can you explain JavaScript closures with examples?',
       timestamp: new Date(now.getTime() - 60 * 60 * 1000),
+      extractedContent: [
+        {
+          url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures',
+          title: 'JavaScript MDN - Closures Guide',
+          content: 'A closure gives you access to an outer function\'s scope from an inner function. In JavaScript, closures are created every time a function is created, at function creation time.',
+          success: true,
+          word_count: 850
+        }
+      ],
+      urls: ['https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures', 'https://javascript.info/closure', 'https://www.freecodecamp.org/news/javascript-closures-explained/']
     },
     {
       id: 'dummy-3',
@@ -108,6 +128,16 @@ const createDummyChatHistory = (): ChatSession[] => {
       ],
       lastMessage: 'What are the best practices for designing REST APIs?',
       timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000),
+      extractedContent: [
+        {
+          url: 'https://restfulapi.net/',
+          title: 'REST API Best Practices Guide',
+          content: 'REST API design best practices include proper use of HTTP methods, resource naming, status codes, error handling, versioning, and security considerations for building scalable web APIs.',
+          success: true,
+          word_count: 920
+        }
+      ],
+      urls: ['https://restfulapi.net/', 'https://docs.microsoft.com/en-us/azure/architecture/best-practices/api-design', 'https://swagger.io/resources/articles/best-practices-in-api-design/']
     },
     {
       id: 'dummy-4',
@@ -128,6 +158,16 @@ const createDummyChatHistory = (): ChatSession[] => {
       ],
       lastMessage: 'What are the differences between CSS Grid and Flexbox?',
       timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+      extractedContent: [
+        {
+          url: 'https://css-tricks.com/snippets/css/complete-guide-grid/',
+          title: 'CSS Grid Layout Complete Guide',
+          content: 'CSS Grid Layout is a two-dimensional grid-based layout system that completely changes how we design user interfaces. Unlike flexbox which is largely a 1-dimensional system, Grid is specifically designed for 2-dimensional layout - rows and columns at the same time.',
+          success: true,
+          word_count: 1100
+        }
+      ],
+      urls: ['https://css-tricks.com/snippets/css/complete-guide-grid/', 'https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Grid_Layout', 'https://gridbyexample.com/']
     },
     {
       id: 'dummy-5',
@@ -148,6 +188,16 @@ const createDummyChatHistory = (): ChatSession[] => {
       ],
       lastMessage: 'How do different types of SQL JOINs work?',
       timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+      extractedContent: [
+        {
+          url: 'https://www.w3schools.com/sql/sql_join.asp',
+          title: 'SQL Tutorial - JOIN Operations',
+          content: 'A JOIN clause is used to combine rows from two or more tables, based on a related column between them. Different types of JOINs include INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN.',
+          success: true,
+          word_count: 750
+        }
+      ],
+      urls: ['https://www.w3schools.com/sql/sql_join.asp', 'https://www.sqltutorial.org/sql-join/', 'https://www.postgresqltutorial.com/postgresql-joins/']
     }
   ];
 };
@@ -281,7 +331,7 @@ export const useAppStore = create<AppStore>()(
   // Chat management implementations
   createNewChat: () => {
     const chatId = `chat-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const { chatHistory, extractedContent } = get();
+    const { chatHistory, extractedContent, sessionId, urls } = get();
     
     // Generate title from extracted content if available
     let chatTitle = 'New Chat';
@@ -296,6 +346,9 @@ export const useAppStore = create<AppStore>()(
       messages: [],
       lastMessage: '',
       timestamp: new Date(),
+      sessionId: sessionId || undefined,
+      extractedContent: [...extractedContent], // Save current extracted content with this chat
+      urls: [...urls], // Save current URLs with this chat
     };
     
     set({
@@ -309,15 +362,23 @@ export const useAppStore = create<AppStore>()(
   },
   
   selectChat: (chatId: string) => {
+    const { chatHistory } = get();
+    const selectedChat = chatHistory.find(chat => chat.id === chatId);
+    
     set({ 
       currentChatId: chatId,
       currentQuestion: '',
       currentAnswer: null,
+      // Restore extracted content from selected chat
+      extractedContent: selectedChat?.extractedContent || [],
+      sessionId: selectedChat?.sessionId || null,
+      // Restore URLs from selected chat
+      urls: selectedChat?.urls || [],
     });
   },
   
   addMessageToCurrentChat: (message: Message) => {
-    const { chatHistory, currentChatId, extractedContent } = get();
+    const { chatHistory, currentChatId, extractedContent, sessionId, urls } = get();
     if (!currentChatId) return;
     
     const updatedHistory = chatHistory.map(chat => {
@@ -342,7 +403,11 @@ export const useAppStore = create<AppStore>()(
           messages: updatedMessages,
           lastMessage: message.content,
           timestamp: new Date(),
-          title: newTitle
+          title: newTitle,
+          // Update the chat's extracted content, sessionId, and URLs
+          extractedContent: [...extractedContent],
+          sessionId: sessionId || chat.sessionId,
+          urls: [...urls],
         };
       }
       return chat;
