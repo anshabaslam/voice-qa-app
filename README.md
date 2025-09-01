@@ -25,7 +25,7 @@ cp .env.example .env
 
 ## 🚀 Quick Start
 
-**After configuration:**
+**After configuration:** (run this in the root directory)
 ```bash
 npm run dev
 ```
@@ -38,6 +38,42 @@ This single command:
 **Access the app:**
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:8000
+
+## 🔧 Manual Setup (If npm run dev fails)
+
+**1. Install root dependencies:**
+```bash
+npm install
+```
+
+**2. Setup Backend:**
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate    # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**3. Setup Frontend:**
+```bash
+cd frontend
+npm install
+```
+
+**4. Run Both Services:**
+
+**Terminal 1 (Backend):**
+```bash
+cd backend
+source venv/bin/activate    # Windows: venv\Scripts\activate
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Terminal 2 (Frontend):**
+```bash
+cd frontend
+npm run dev
+```
 
 ## 📋 Prerequisites
 
