@@ -16,19 +16,6 @@ import { toast } from '../utils/toast';
 import { ChatInterface } from './ChatInterface';
 import { WalkthroughTour } from './WalkthroughTour';
 
-const formatRelativeTime = (timestamp: Date | string) => {
-  const now = new Date();
-  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-  if (diffInMinutes < 1) return 'now';
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-  return `${diffInDays}d ago`;
-};
 
 export function VoiceQAPage() {
   const { extractedContent, isLoading, error, urls, addUrl, removeUrl, setExtractedContent, setSessionId, chatHistory, selectChat, createNewChat, deleteChat, currentChatId, initializeDummyData } = useAppStore();
@@ -312,12 +299,7 @@ export function VoiceQAPage() {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">{chat.title}</h4>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                          {formatRelativeTime(chat.timestamp)}
-                        </span>
-                      </div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1 mb-1">{chat.title}</h4>
                       <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">{chat.lastMessage}</p>
                     </div>
                     
