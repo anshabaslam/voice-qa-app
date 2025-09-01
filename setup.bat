@@ -42,17 +42,9 @@ REM Activate virtual environment
 call venv\Scripts\activate.bat
 
 REM Install Python dependencies
-echo Installing Python dependencies (lightweight version)...
+echo Installing Python dependencies...
 pip install --upgrade pip
-
-REM Try minimal requirements first
-if exist "requirements-minimal.txt" (
-    echo Using minimal requirements for faster setup...
-    pip install -r requirements-minimal.txt
-) else (
-    echo Installing full requirements...
-    pip install -r requirements.txt
-)
+pip install -r requirements.txt
 
 REM Go back to root
 cd ..

@@ -37,18 +37,10 @@ fi
 # Activate virtual environment
 source venv/bin/activate
 
-# Install Python dependencies (minimal version for faster setup)
-echo "Installing Python dependencies (lightweight version)..."
+# Install Python dependencies
+echo "Installing Python dependencies..."
 pip install --upgrade pip
-
-# Try minimal requirements first
-if [ -f "requirements-minimal.txt" ]; then
-    echo "Using minimal requirements for faster setup..."
-    pip install -r requirements-minimal.txt
-else
-    echo "Installing full requirements..."
-    pip install -r requirements.txt
-fi
+pip install -r requirements.txt
 
 # Go back to root
 cd ..
