@@ -202,14 +202,20 @@ export function ChatInterface() {
   }, [currentAnswer, speak, settings.selectedVoice, getCurrentMessages]);
 
   const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+    let question = inputValue.trim();
+    
+    // If recording and no input text, use current transcript
+    if (isRecording && !question && transcript) {
+      question = transcript.trim();
+      // Don't stop recording automatically - let it continue
+    }
+    
+    if (!question) return;
 
     // Create a new chat if there isn't a current one
     if (!currentChatId) {
       createNewChat();
     }
-
-    const question = inputValue.trim();
     const newMessage: Message = {
       id: Date.now().toString(),
       content: question,
@@ -262,6 +268,7 @@ export function ChatInterface() {
 
   const handleVoiceToggle = () => {
     if (isRecording) {
+      setWasStoppedManually(true);
       stopRecording();
     } else {
       if (isSupported) {
@@ -272,12 +279,16 @@ export function ChatInterface() {
     }
   };
 
-  // Use transcript as input when voice recording finishes
+  // Track if recording was stopped manually vs auto-finished
+  const [wasStoppedManually, setWasStoppedManually] = useState(false);
+
+  // Use transcript as input when voice recording finishes manually (no auto-submit)
   useEffect(() => {
-    if (transcript && !isRecording) {
+    if (transcript && !isRecording && wasStoppedManually) {
       setInputValue(transcript);
+      setWasStoppedManually(false);
     }
-  }, [transcript, isRecording]);
+  }, [transcript, isRecording, wasStoppedManually]);
 
   const handleLike = (messageId: string) => {
     const currentFeedback = messageFeedback[messageId];
@@ -351,8 +362,8 @@ export function ChatInterface() {
                   message.isUser
                     ? 'bg-blue-600 text-white ml-auto'
                     : !hasContentSources
-                      ? 'bg-transparent text-white border border-orange-400/70'
-                      : 'bg-transparent text-white border border-gray-800'
+                      ? 'bg-transparent text-gray-900 dark:text-white border border-orange-400/70'
+                      : 'bg-transparent text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800'
                 }`}>
                   <p className="whitespace-pre-wrap leading-relaxed text-sm mb-2">{message.content}</p>
                   
@@ -371,7 +382,7 @@ export function ChatInterface() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => copyToClipboard(message.content)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
                           title="Copy message"
                         >
                           <ClipboardDocumentIcon className="w-4 h-4" />
@@ -379,13 +390,13 @@ export function ChatInterface() {
                         <button
                           onClick={() => handlePlayMessage(message.id, message.content)}
                           disabled={playingMessageId === message.id}
-                          className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors disabled:opacity-50"
+                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                           title="Play message audio"
                         >
                           <SpeakerWaveIcon className={`w-4 h-4 ${playingMessageId === message.id ? 'animate-pulse text-blue-400' : ''}`} />
                         </button>
                         <button
-                          className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
                           title="Save message"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -397,7 +408,7 @@ export function ChatInterface() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleDislike(message.id)}
-                          className={`p-2 rounded-lg transition-all duration-200 hover:bg-gray-800 ${
+                          className={`p-2 rounded-lg transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-800 ${
                             shakeMessageId === message.id && messageFeedback[message.id] === 'dislike' ? 'animate-bounce' : ''
                           }`}
                           title="Bad response"
@@ -405,12 +416,12 @@ export function ChatInterface() {
                           <HandThumbDownIcon className={`w-4 h-4 transition-colors ${
                             messageFeedback[message.id] === 'dislike' 
                               ? 'text-red-500 fill-current' 
-                              : 'text-gray-400'
+                              : 'text-gray-500 dark:text-gray-400'
                           }`} />
                         </button>
                         <button
                           onClick={() => handleLike(message.id)}
-                          className={`p-2 rounded-lg transition-all duration-200 hover:bg-gray-800 ${
+                          className={`p-2 rounded-lg transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-800 ${
                             shakeMessageId === message.id && messageFeedback[message.id] === 'like' ? 'animate-bounce' : ''
                           }`}
                           title="Good response"
@@ -418,7 +429,7 @@ export function ChatInterface() {
                           <HandThumbUpIcon className={`w-4 h-4 transition-colors ${
                             messageFeedback[message.id] === 'like' 
                               ? 'text-yellow-500 fill-current' 
-                              : 'text-gray-400'
+                              : 'text-gray-500 dark:text-gray-400'
                           }`} />
                         </button>
                       </div>
@@ -522,7 +533,7 @@ export function ChatInterface() {
                       <div className="absolute inset-0 rounded-full border border-white animate-pulse opacity-50"></div>
                     </div>
                   ) : (
-                    <MicrophoneIcon className="w-4 h-4" />
+                    <MicrophoneIcon className="w-4 h-4 text-white" />
                   )}
                   
                   {/* Audio level visualization */}
@@ -534,7 +545,7 @@ export function ChatInterface() {
                 {/* Always show send button */}
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputValue.trim()}
+                  disabled={!inputValue.trim() && !(isRecording && transcript?.trim())}
                   className="p-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                   title="Send message"
                 >
