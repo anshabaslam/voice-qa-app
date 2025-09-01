@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, onPageChange }) => {
             {/* Mobile Menu Button */}
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-lg text-gray-500 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors lg:hidden"
+              className="p-2 text-gray-500 dark:text-dark-400 transition-colors lg:hidden"
             >
               <Bars3Icon className="w-5 h-5" />
             </button>

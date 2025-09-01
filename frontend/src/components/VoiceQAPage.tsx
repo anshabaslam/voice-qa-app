@@ -1,5 +1,4 @@
 import {
-  Bars3Icon,
   ChatBubbleLeftRightIcon,
   CheckIcon,
   DocumentTextIcon,
@@ -334,7 +333,7 @@ export function VoiceQAPage() {
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <Bars3Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <ChatBubbleLeftRightIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
         )}
