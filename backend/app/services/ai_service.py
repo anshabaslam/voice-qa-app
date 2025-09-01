@@ -7,6 +7,7 @@ from fastapi import UploadFile
 from app.models.schemas import AnswerResponse
 from app.core.config import settings
 from app.services.free_ai_service import FreeAIService
+from app.services.chroma_service import chroma_service
 import logging
 
 logger = logging.getLogger(__name__)
@@ -68,9 +69,13 @@ class AIService:
         if not session_id:
             session_id = str(uuid.uuid4())
         
-        # Get context from previous extractions
-        context = await self._get_context(session_id)
+        # Get context from previous extractions using semantic search
+        context = await self._get_context(session_id, query=question)
         logger.info(f"   - Context items: {len(context) if context else 0}")
+        
+        # Get recent conversation history for context
+        conversation_history = await self.get_session_history(session_id)
+        logger.info(f"   - Conversation history: {len(conversation_history)} messages")
         
         if not context:
             logger.error("No context available for session")
@@ -86,15 +91,15 @@ class AIService:
             # Try paid services first if available
             if self.openai_client:
                 logger.info("🤖 Trying OpenAI GPT service")
-                answer, sources = await self._answer_with_openai(question, context)
+                answer, sources = await self._answer_with_openai(question, context, conversation_history)
                 logger.info("✅ OpenAI service succeeded")
             elif self.groq_client:
                 logger.info("⚡ Trying Groq service (FAST)")
-                answer, sources = await self._answer_with_groq(question, context)
+                answer, sources = await self._answer_with_groq(question, context, conversation_history)
                 logger.info("✅ Groq service succeeded")
             elif self.anthropic_client:
                 logger.info("🤖 Trying Anthropic Claude service")
-                answer, sources = await self._answer_with_anthropic(question, context)
+                answer, sources = await self._answer_with_anthropic(question, context, conversation_history)
                 logger.info("✅ Anthropic service succeeded")
             else:
                 # Use free AI service as fallback
@@ -126,31 +131,32 @@ class AIService:
             confidence=0.8
         )
     
-    async def _answer_with_openai(self, question: str, context: List[Dict]) -> tuple[str, List[str]]:
+    async def _answer_with_openai(self, question: str, context: List[Dict], conversation_history: List[Dict] = None) -> tuple[str, List[str]]:
         try:
             # Prepare context for the model
             context_text = self._prepare_context(context)
+            conversation_text = self._prepare_conversation_history(conversation_history)
             
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
+                    "content": """You are a helpful AI assistant who provides clear, natural answers based primarily on the provided web content.
 
-                    CRITICAL RULES:
-                    1. ONLY use information that is explicitly stated in the provided context
-                    2. DO NOT add any information from your general knowledge
-                    3. If the answer is not in the provided context, say "I cannot find this information in the provided content"
-                    4. Answer in a conversational, natural tone using ONLY the extracted content
-                    5. Include specific facts, dates, names, and details ONLY from the provided sources
-                    6. If information is incomplete in the sources, mention what specific details are missing
-                    7. Organize your response logically using only the available information
+                    GUIDELINES:
+                    1. Use information from the provided context as your primary source
+                    2. You may perform basic calculations, date math, and logical inferences based on the context
+                    3. If doing calculations (like age), show your work: "Based on the birth year in the content and current year 2025..."
+                    4. If the answer requires information not in the context, say "I need more specific information about [topic] to answer this fully"
+                    5. Answer in a conversational, natural tone
+                    6. Include specific facts, dates, names from the provided sources
+                    7. You may use common knowledge for basic facts (current year, simple calculations) when combined with context information
                     8. Avoid including raw HTML, navigation text, or website formatting
                     
-                    FORMAT: Provide a natural, conversational answer using ONLY the information from the provided context."""
+                    FORMAT: Provide a natural, conversational answer using the context information, with reasonable inferences when needed."""
                 },
                 {
-                    "role": "user",
-                    "content": f"Context:\n{context_text}\n\nQuestion: {question}"
+                    "role": "user", 
+                    "content": f"Context:\n{context_text}\n\n{conversation_text}Current Question: {question}"
                 }
             ]
             
@@ -170,30 +176,31 @@ class AIService:
             logger.error(f"OpenAI API error: {e}")
             raise ValueError(f"Failed to generate answer: {str(e)}")
     
-    async def _answer_with_groq(self, question: str, context: List[Dict]) -> tuple[str, List[str]]:
+    async def _answer_with_groq(self, question: str, context: List[Dict], conversation_history: List[Dict] = None) -> tuple[str, List[str]]:
         try:
             context_text = self._prepare_context(context)
+            conversation_text = self._prepare_conversation_history(conversation_history)
             
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
+                    "content": """You are a helpful AI assistant who provides clear, natural answers based primarily on the provided web content.
 
-                    CRITICAL RULES:
-                    1. ONLY use information that is explicitly stated in the provided context
-                    2. DO NOT add any information from your general knowledge
-                    3. If the answer is not in the provided context, say "I cannot find this information in the provided content"
-                    4. Answer in a conversational, natural tone using ONLY the extracted content
-                    5. Include specific facts, dates, names, and details ONLY from the provided sources
-                    6. If information is incomplete in the sources, mention what specific details are missing
-                    7. Organize your response logically using only the available information
+                    GUIDELINES:
+                    1. Use information from the provided context as your primary source
+                    2. You may perform basic calculations, date math, and logical inferences based on the context
+                    3. If doing calculations (like age), show your work: "Based on the birth year in the content and current year 2025..."
+                    4. If the answer requires information not in the context, say "I need more specific information about [topic] to answer this fully"
+                    5. Answer in a conversational, natural tone
+                    6. Include specific facts, dates, names from the provided sources
+                    7. You may use common knowledge for basic facts (current year, simple calculations) when combined with context information
                     8. Avoid including raw HTML, navigation text, or website formatting
                     
-                    FORMAT: Provide a natural, conversational answer using ONLY the information from the provided context."""
+                    FORMAT: Provide a natural, conversational answer using the context information, with reasonable inferences when needed."""
                 },
                 {
-                    "role": "user",
-                    "content": f"Context:\n{context_text}\n\nQuestion: {question}"
+                    "role": "user", 
+                    "content": f"Context:\n{context_text}\n\n{conversation_text}Current Question: {question}"
                 }
             ]
             
@@ -213,9 +220,10 @@ class AIService:
             logger.error(f"Groq API error: {e}")
             raise ValueError(f"Failed to generate answer: {str(e)}")
 
-    async def _answer_with_anthropic(self, question: str, context: List[Dict]) -> tuple[str, List[str]]:
+    async def _answer_with_anthropic(self, question: str, context: List[Dict], conversation_history: List[Dict] = None) -> tuple[str, List[str]]:
         try:
             context_text = self._prepare_context(context)
+            conversation_text = self._prepare_conversation_history(conversation_history)
             
             prompt = f"""You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
 
@@ -232,7 +240,7 @@ class AIService:
             Context:
             {context_text}
 
-            Question: {question}
+            {conversation_text}Current Question: {question}
 
             Please provide a natural, conversational answer using ONLY the information from the provided context above."""
             
@@ -273,6 +281,25 @@ class AIService:
             context_parts.append(f"Article {i}: {title}\nContent: {content}\n")
         return "\n".join(context_parts)
     
+    def _prepare_conversation_history(self, conversation_history: List[Dict] = None) -> str:
+        """Prepare recent conversation history for context"""
+        if not conversation_history:
+            return ""
+        
+        # Get last 3 Q&A pairs for context
+        recent_history = conversation_history[-6:] if len(conversation_history) > 6 else conversation_history
+        
+        history_parts = []
+        for entry in recent_history:
+            question = entry.get('question', '')
+            answer = entry.get('answer', '')
+            if question and answer:
+                history_parts.append(f"Previous Q: {question}\nPrevious A: {answer}")
+        
+        if history_parts:
+            return "Recent Conversation:\n" + "\n\n".join(history_parts) + "\n\n"
+        return ""
+    
     async def transcribe_audio(self, audio_file: UploadFile) -> str:
         # Try OpenAI Whisper if available
         if self.openai_client:
@@ -298,7 +325,24 @@ class AIService:
     _context_storage = {}
     _qa_storage = {}
     
-    async def _get_context(self, session_id: str) -> Optional[List[Dict]]:
+    async def _get_context(self, session_id: str, query: str = "") -> Optional[List[Dict]]:
+        """Get context using semantic search from ChromaDB for better relevance"""
+        
+        # Try ChromaDB first for semantic search (if query provided)
+        if query and chroma_service.collection:
+            try:
+                relevant_content = chroma_service.search_relevant_content(
+                    session_id=session_id, 
+                    query=query, 
+                    max_results=5
+                )
+                if relevant_content:
+                    logger.info(f"Found {len(relevant_content)} relevant chunks using semantic search")
+                    return relevant_content
+            except Exception as e:
+                logger.error(f"ChromaDB search failed: {e}")
+        
+        # Fallback to Redis/in-memory storage
         if self.redis_client:
             try:
                 context_key = f"context:{session_id}"
@@ -308,10 +352,21 @@ class AIService:
             except Exception as e:
                 logger.error(f"Failed to retrieve context from Redis: {e}")
         
-        # Fallback to in-memory storage
+        # Final fallback to in-memory storage
         return self._context_storage.get(session_id)
     
     async def store_context(self, session_id: str, extracted_content: List[Dict]):
+        # Store in ChromaDB for semantic search (primary)
+        try:
+            success = chroma_service.add_content(session_id, extracted_content)
+            if success:
+                logger.info(f"Stored content in ChromaDB for session {session_id}")
+            else:
+                logger.warning("ChromaDB storage failed, using fallback")
+        except Exception as e:
+            logger.error(f"Failed to store context in ChromaDB: {e}")
+        
+        # Also store in Redis/memory for backwards compatibility
         if self.redis_client:
             try:
                 context_key = f"context:{session_id}"
