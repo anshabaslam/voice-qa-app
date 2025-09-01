@@ -73,10 +73,6 @@ class AIService:
         context = await self._get_context(session_id, query=question)
         logger.info(f"   - Context items: {len(context) if context else 0}")
         
-        # Get recent conversation history for context
-        conversation_history = await self.get_session_history(session_id)
-        logger.info(f"   - Conversation history: {len(conversation_history)} messages")
-        
         if not context:
             logger.error("No context available for session")
             raise ValueError("No content available. Please extract content from URLs first.")
@@ -91,15 +87,15 @@ class AIService:
             # Try paid services first if available
             if self.openai_client:
                 logger.info("🤖 Trying OpenAI GPT service")
-                answer, sources = await self._answer_with_openai(question, context, conversation_history)
+                answer, sources = await self._answer_with_openai(question, context)
                 logger.info("✅ OpenAI service succeeded")
             elif self.groq_client:
                 logger.info("⚡ Trying Groq service (FAST)")
-                answer, sources = await self._answer_with_groq(question, context, conversation_history)
+                answer, sources = await self._answer_with_groq(question, context)
                 logger.info("✅ Groq service succeeded")
             elif self.anthropic_client:
                 logger.info("🤖 Trying Anthropic Claude service")
-                answer, sources = await self._answer_with_anthropic(question, context, conversation_history)
+                answer, sources = await self._answer_with_anthropic(question, context)
                 logger.info("✅ Anthropic service succeeded")
             else:
                 # Use free AI service as fallback
@@ -131,32 +127,31 @@ class AIService:
             confidence=0.8
         )
     
-    async def _answer_with_openai(self, question: str, context: List[Dict], conversation_history: List[Dict] = None) -> tuple[str, List[str]]:
+    async def _answer_with_openai(self, question: str, context: List[Dict]) -> tuple[str, List[str]]:
         try:
             # Prepare context for the model
             context_text = self._prepare_context(context)
-            conversation_text = self._prepare_conversation_history(conversation_history)
             
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
+                    "content": """You are a helpful AI assistant who provides answers based on the provided web content context.
 
-                    RULES:
-                    1. ONLY use information explicitly stated in the provided context
-                    2. You may perform basic calculations ONLY when both pieces of information are in the context (like birth year + current year for age)
-                    3. DO NOT add general knowledge, background information, or context not from the provided sources
-                    4. If doing calculations, be brief: "Born 1951, so he is 74 years old in 2025"
-                    5. If the answer is not in the provided context, say "I cannot find this information in the provided content"
-                    6. Answer in a direct, concise tone using ONLY the extracted content
-                    7. Do not provide additional context or explanations beyond what's in the sources
-                    8. Avoid including raw HTML, navigation text, or website formatting
+                    GUIDELINES:
+                    1. For greetings (hi, hello, etc.) and basic conversational responses, respond naturally
+                    2. For factual questions, use ONLY information from the provided web content context
+                    3. If factual information is available in the context, provide a clear and helpful answer
+                    4. If factual information is not in the context, state "I don't have that specific information in the provided content"
+                    5. Do NOT use general knowledge for factual questions - stick to the extracted content only
+                    6. Keep answers concise and focused on the question asked
+                    7. Avoid including raw HTML, navigation text, or website formatting
+                    8. When answering factual questions, reference the relevant parts of the context
                     
-                    FORMAT: Provide a direct answer using ONLY the information from the provided context, with minimal additional explanation."""
+                    FORMAT: Respond naturally to greetings. For factual questions, answer based on the provided context."""
                 },
                 {
-                    "role": "user", 
-                    "content": f"Context:\n{context_text}\n\n{conversation_text}Current Question: {question}"
+                    "role": "user",
+                    "content": f"Context:\n{context_text}\n\nQuestion: {question}"
                 }
             ]
             
@@ -176,31 +171,30 @@ class AIService:
             logger.error(f"OpenAI API error: {e}")
             raise ValueError(f"Failed to generate answer: {str(e)}")
     
-    async def _answer_with_groq(self, question: str, context: List[Dict], conversation_history: List[Dict] = None) -> tuple[str, List[str]]:
+    async def _answer_with_groq(self, question: str, context: List[Dict]) -> tuple[str, List[str]]:
         try:
             context_text = self._prepare_context(context)
-            conversation_text = self._prepare_conversation_history(conversation_history)
             
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
+                    "content": """You are a helpful AI assistant who provides answers based on the provided web content context.
 
-                    RULES:
-                    1. ONLY use information explicitly stated in the provided context
-                    2. You may perform basic calculations ONLY when both pieces of information are in the context (like birth year + current year for age)
-                    3. DO NOT add general knowledge, background information, or context not from the provided sources
-                    4. If doing calculations, be brief: "Born 1951, so he is 74 years old in 2025"
-                    5. If the answer is not in the provided context, say "I cannot find this information in the provided content"
-                    6. Answer in a direct, concise tone using ONLY the extracted content
-                    7. Do not provide additional context or explanations beyond what's in the sources
-                    8. Avoid including raw HTML, navigation text, or website formatting
+                    GUIDELINES:
+                    1. For greetings (hi, hello, etc.) and basic conversational responses, respond naturally
+                    2. For factual questions, use ONLY information from the provided web content context
+                    3. If factual information is available in the context, provide a clear and helpful answer
+                    4. If factual information is not in the context, state "I don't have that specific information in the provided content"
+                    5. Do NOT use general knowledge for factual questions - stick to the extracted content only
+                    6. Keep answers concise and focused on the question asked
+                    7. Avoid including raw HTML, navigation text, or website formatting
+                    8. When answering factual questions, reference the relevant parts of the context
                     
-                    FORMAT: Provide a direct answer using ONLY the information from the provided context, with minimal additional explanation."""
+                    FORMAT: Respond naturally to greetings. For factual questions, answer based on the provided context."""
                 },
                 {
-                    "role": "user", 
-                    "content": f"Context:\n{context_text}\n\n{conversation_text}Current Question: {question}"
+                    "role": "user",
+                    "content": f"Context:\n{context_text}\n\nQuestion: {question}"
                 }
             ]
             
@@ -220,29 +214,28 @@ class AIService:
             logger.error(f"Groq API error: {e}")
             raise ValueError(f"Failed to generate answer: {str(e)}")
 
-    async def _answer_with_anthropic(self, question: str, context: List[Dict], conversation_history: List[Dict] = None) -> tuple[str, List[str]]:
+    async def _answer_with_anthropic(self, question: str, context: List[Dict]) -> tuple[str, List[str]]:
         try:
             context_text = self._prepare_context(context)
-            conversation_text = self._prepare_conversation_history(conversation_history)
             
-            prompt = f"""You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
+            prompt = f"""You are a helpful AI assistant who provides answers based on the provided web content context.
 
-            RULES:
-            1. ONLY use information explicitly stated in the provided context
-            2. You may perform basic calculations ONLY when both pieces of information are in the context (like birth year + current year for age)
-            3. DO NOT add general knowledge, background information, or context not from the provided sources
-            4. If doing calculations, be brief: "Born 1951, so he is 74 years old in 2025"
-            5. If the answer is not in the provided context, say "I cannot find this information in the provided content"
-            6. Answer in a direct, concise tone using ONLY the extracted content
-            7. Do not provide additional context or explanations beyond what's in the sources
-            8. Avoid including raw HTML, navigation text, or website formatting
+            GUIDELINES:
+            1. For greetings (hi, hello, etc.) and basic conversational responses, respond naturally
+            2. For factual questions, use ONLY information from the provided web content context
+            3. If factual information is available in the context, provide a clear and helpful answer
+            4. If factual information is not in the context, state "I don't have that specific information in the provided content"
+            5. Do NOT use general knowledge for factual questions - stick to the extracted content only
+            6. Keep answers concise and focused on the question asked
+            7. Avoid including raw HTML, navigation text, or website formatting
+            8. When answering factual questions, reference the relevant parts of the context
 
             Context:
             {context_text}
 
-            {conversation_text}Current Question: {question}
+            Question: {question}
 
-            Please provide a direct answer using ONLY the information from the provided context, with minimal additional explanation."""
+            Please respond naturally to greetings, or analyze the context carefully for factual questions."""
             
             response = await self.anthropic_client.messages.create(
                 model="claude-3-sonnet-20240229",
@@ -280,25 +273,6 @@ class AIService:
                     
             context_parts.append(f"Article {i}: {title}\nContent: {content}\n")
         return "\n".join(context_parts)
-    
-    def _prepare_conversation_history(self, conversation_history: List[Dict] = None) -> str:
-        """Prepare recent conversation history for context"""
-        if not conversation_history:
-            return ""
-        
-        # Get last 3 Q&A pairs for context
-        recent_history = conversation_history[-6:] if len(conversation_history) > 6 else conversation_history
-        
-        history_parts = []
-        for entry in recent_history:
-            question = entry.get('question', '')
-            answer = entry.get('answer', '')
-            if question and answer:
-                history_parts.append(f"Previous Q: {question}\nPrevious A: {answer}")
-        
-        if history_parts:
-            return "Recent Conversation:\n" + "\n\n".join(history_parts) + "\n\n"
-        return ""
     
     async def transcribe_audio(self, audio_file: UploadFile) -> str:
         # Try OpenAI Whisper if available

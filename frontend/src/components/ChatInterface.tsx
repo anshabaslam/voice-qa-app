@@ -7,7 +7,11 @@ import { useAppStore } from '../stores/appStore';
 import type { Message } from '../types';
 import { toast } from '../utils/toast';
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  isExtracting?: boolean;
+}
+
+export function ChatInterface({ isExtracting = false }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -20,6 +24,9 @@ export function ChatInterface() {
   const voiceIsProcessing = voiceState.isProcessing;
   const hasContentSources = extractedContent.length > 0;
   const messages = getCurrentMessages();
+  
+  // Combined processing state - disable input during extraction or AI processing
+  const isProcessingDisabled = isExtracting || isTyping || voiceIsProcessing;
   
   // Ensure messages update when currentChatId changes
   useEffect(() => {
@@ -202,6 +209,14 @@ export function ChatInterface() {
   }, [currentAnswer, speak, settings.selectedVoice, getCurrentMessages]);
 
   const handleSendMessage = () => {
+    // Prevent sending if currently processing or extracting
+    if (isProcessingDisabled) {
+      if (isExtracting) {
+        toast.warning('Please wait for content extraction to complete before asking questions.');
+      }
+      return;
+    }
+
     let question = inputValue.trim();
     
     // If recording and no input text, use current transcript
@@ -233,7 +248,10 @@ export function ChatInterface() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      // Don't send if processing
+      if (!isProcessingDisabled) {
+        handleSendMessage();
+      }
     }
   };
 
@@ -503,11 +521,19 @@ export function ChatInterface() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={isRecording ? "Listening..." : "Message Voice Q&A..."}
-                  className="flex-1 bg-transparent border-0 resize-none focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm leading-relaxed"
+                  placeholder={
+                    isExtracting ? "Content is being extracted... Please wait" :
+                    isTyping ? "AI is thinking... Please wait" :
+                    isRecording ? "Listening..." : 
+                    "Message Voice Q&A..."
+                  }
+                  className={`flex-1 bg-transparent border-0 resize-none focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm leading-relaxed ${
+                    isProcessingDisabled ? 'cursor-not-allowed opacity-70' : ''
+                  }`}
                   rows={1}
                   style={{ minHeight: '24px', maxHeight: '120px' }}
-                  readOnly={isRecording}
+                  readOnly={isRecording || isProcessingDisabled}
+                  disabled={isProcessingDisabled}
                 />
               
               {/* Action Buttons */}
@@ -545,8 +571,12 @@ export function ChatInterface() {
                 {/* Always show send button */}
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputValue.trim() && !(isRecording && transcript?.trim())}
-                  className="p-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  disabled={isProcessingDisabled || (!inputValue.trim() && !(isRecording && transcript?.trim()))}
+                  className={`p-1.5 text-white rounded-lg transition-colors ${
+                    isProcessingDisabled 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                   title="Send message"
                 >
                   <PaperAirplaneIcon className="w-4 h-4" />
