@@ -142,7 +142,13 @@ export function VoiceQAPage() {
     <div className="h-[90vh] bg-white dark:bg-black flex overflow-hidden">
 
       {/* Sidebar */}
-      <div className={`${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 overflow-hidden bg-white dark:bg-transparent text-gray-900 dark:text-white flex flex-col border-r border-gray-200 dark:border-gray-800`}>
+      <div 
+        className={`${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 overflow-hidden bg-white dark:bg-transparent text-gray-900 dark:text-white flex flex-col ${isSidebarOpen ? 'border-r border-gray-200 dark:border-gray-800' : ''}`}
+        style={{ 
+          minWidth: isSidebarOpen ? '256px' : '0',
+          maxWidth: isSidebarOpen ? '256px' : '0'
+        }}
+      >
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
@@ -338,7 +344,7 @@ export function VoiceQAPage() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
         {/* Header */}
         {!isSidebarOpen && (
           <div className="p-4">

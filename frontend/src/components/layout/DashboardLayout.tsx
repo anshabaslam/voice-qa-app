@@ -10,6 +10,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, currentPage, onPageChange }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -17,10 +18,14 @@ export function DashboardLayout({ children, currentPage, onPageChange }: Dashboa
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-dark-900" style={{ transition: 'background-color 150ms ease-in-out' }}>
-      <Sidebar currentPage={currentPage} onPageChange={onPageChange} />
+      <Sidebar 
+        currentPage={currentPage} 
+        onPageChange={onPageChange} 
+        onCollapseChange={setSidebarCollapsed}
+      />
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-[280px]" style={{ transition: 'all 150ms ease-in-out' }}>
+      <div className={`flex-1 flex flex-col min-w-0 ${sidebarCollapsed ? 'lg:ml-[70px]' : 'lg:ml-[280px]'}`} style={{ transition: 'all 150ms ease-in-out' }}>
         {/* Header */}
         <Header toggleSidebar={toggleSidebar} onPageChange={onPageChange} />
         

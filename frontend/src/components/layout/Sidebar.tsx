@@ -26,9 +26,10 @@ import logoDark from '../../assets/logo-white.png';
 interface SidebarProps {
   currentPage: string;
   onPageChange: (page: string) => void;
+  onCollapseChange?: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
+export function Sidebar({ currentPage, onPageChange, onCollapseChange }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -74,7 +75,9 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
 
   const handleCollapse = () => {
     if (!isMobile) {
-      setIsCollapsed(!isCollapsed);
+      const newCollapsedState = !isCollapsed;
+      setIsCollapsed(newCollapsedState);
+      onCollapseChange?.(newCollapsedState);
     }
   };
 
