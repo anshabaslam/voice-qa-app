@@ -140,19 +140,19 @@ class AIService:
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful AI assistant who provides clear, natural answers based primarily on the provided web content.
+                    "content": """You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
 
-                    GUIDELINES:
-                    1. Use information from the provided context as your primary source
-                    2. You may perform basic calculations, date math, and logical inferences based on the context
-                    3. If doing calculations (like age), show your work: "Based on the birth year in the content and current year 2025..."
-                    4. If the answer requires information not in the context, say "I need more specific information about [topic] to answer this fully"
-                    5. Answer in a conversational, natural tone
-                    6. Include specific facts, dates, names from the provided sources
-                    7. You may use common knowledge for basic facts (current year, simple calculations) when combined with context information
+                    RULES:
+                    1. ONLY use information explicitly stated in the provided context
+                    2. You may perform basic calculations ONLY when both pieces of information are in the context (like birth year + current year for age)
+                    3. DO NOT add general knowledge, background information, or context not from the provided sources
+                    4. If doing calculations, be brief: "Born 1951, so he is 74 years old in 2025"
+                    5. If the answer is not in the provided context, say "I cannot find this information in the provided content"
+                    6. Answer in a direct, concise tone using ONLY the extracted content
+                    7. Do not provide additional context or explanations beyond what's in the sources
                     8. Avoid including raw HTML, navigation text, or website formatting
                     
-                    FORMAT: Provide a natural, conversational answer using the context information, with reasonable inferences when needed."""
+                    FORMAT: Provide a direct answer using ONLY the information from the provided context, with minimal additional explanation."""
                 },
                 {
                     "role": "user", 
@@ -184,19 +184,19 @@ class AIService:
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful AI assistant who provides clear, natural answers based primarily on the provided web content.
+                    "content": """You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
 
-                    GUIDELINES:
-                    1. Use information from the provided context as your primary source
-                    2. You may perform basic calculations, date math, and logical inferences based on the context
-                    3. If doing calculations (like age), show your work: "Based on the birth year in the content and current year 2025..."
-                    4. If the answer requires information not in the context, say "I need more specific information about [topic] to answer this fully"
-                    5. Answer in a conversational, natural tone
-                    6. Include specific facts, dates, names from the provided sources
-                    7. You may use common knowledge for basic facts (current year, simple calculations) when combined with context information
+                    RULES:
+                    1. ONLY use information explicitly stated in the provided context
+                    2. You may perform basic calculations ONLY when both pieces of information are in the context (like birth year + current year for age)
+                    3. DO NOT add general knowledge, background information, or context not from the provided sources
+                    4. If doing calculations, be brief: "Born 1951, so he is 74 years old in 2025"
+                    5. If the answer is not in the provided context, say "I cannot find this information in the provided content"
+                    6. Answer in a direct, concise tone using ONLY the extracted content
+                    7. Do not provide additional context or explanations beyond what's in the sources
                     8. Avoid including raw HTML, navigation text, or website formatting
                     
-                    FORMAT: Provide a natural, conversational answer using the context information, with reasonable inferences when needed."""
+                    FORMAT: Provide a direct answer using ONLY the information from the provided context, with minimal additional explanation."""
                 },
                 {
                     "role": "user", 
@@ -227,14 +227,14 @@ class AIService:
             
             prompt = f"""You are a helpful AI assistant who provides clear, natural answers based STRICTLY on the provided web content.
 
-            CRITICAL RULES:
-            1. ONLY use information that is explicitly stated in the provided context
-            2. DO NOT add any information from your general knowledge
-            3. If the answer is not in the provided context, say "I cannot find this information in the provided content"
-            4. Answer in a conversational, natural tone using ONLY the extracted content
-            5. Include specific facts, dates, names, and details ONLY from the provided sources
-            6. If information is incomplete in the sources, mention what specific details are missing
-            7. Organize your response logically using only the available information
+            RULES:
+            1. ONLY use information explicitly stated in the provided context
+            2. You may perform basic calculations ONLY when both pieces of information are in the context (like birth year + current year for age)
+            3. DO NOT add general knowledge, background information, or context not from the provided sources
+            4. If doing calculations, be brief: "Born 1951, so he is 74 years old in 2025"
+            5. If the answer is not in the provided context, say "I cannot find this information in the provided content"
+            6. Answer in a direct, concise tone using ONLY the extracted content
+            7. Do not provide additional context or explanations beyond what's in the sources
             8. Avoid including raw HTML, navigation text, or website formatting
 
             Context:
@@ -242,7 +242,7 @@ class AIService:
 
             {conversation_text}Current Question: {question}
 
-            Please provide a natural, conversational answer using ONLY the information from the provided context above."""
+            Please provide a direct answer using ONLY the information from the provided context, with minimal additional explanation."""
             
             response = await self.anthropic_client.messages.create(
                 model="claude-3-sonnet-20240229",
