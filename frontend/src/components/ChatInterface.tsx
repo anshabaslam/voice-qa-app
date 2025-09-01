@@ -17,7 +17,9 @@ export function ChatInterface({ isExtracting = false }: ChatInterfaceProps) {
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
   const [messageFeedback, setMessageFeedback] = useState<Record<string, 'like' | 'dislike' | null>>({});
   const [shakeMessageId, setShakeMessageId] = useState<string | null>(null);
+  const [lastPlayedAnswer, setLastPlayedAnswer] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const { currentAnswer, currentQuestion, voiceState, sessionId, extractedContent, setCurrentAnswer, setLoading, setError, getCurrentMessages, addMessageToCurrentChat, currentChatId, createNewChat, trackQuestion, trackAnswer, addActivity } = useAppStore();
   const { speak, settings } = useVoice();
   const { isSupported, isRecording, isProcessing, audioLevel, transcript, startRecording, stopRecording } = useVoiceRecording();
@@ -125,6 +127,15 @@ export function ChatInterface({ isExtracting = false }: ChatInterfaceProps) {
       });
 
       setCurrentAnswer(result);
+      
+      // Immediately add the AI response to the chat
+      const responseMessage: Message = {
+        id: Date.now().toString() + '-a-' + Math.random().toString(36).substring(7),
+        content: result.answer,
+        isUser: false,
+        timestamp: new Date()
+      };
+      addMessageToCurrentChat(responseMessage);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to get answer';
       
@@ -143,6 +154,11 @@ export function ChatInterface({ isExtracting = false }: ChatInterfaceProps) {
     } finally {
       setLoading(false);
       setIsTyping(false);
+      
+      // Re-focus input after AI response is complete
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 200);
     }
   };
 
@@ -170,43 +186,26 @@ export function ChatInterface({ isExtracting = false }: ChatInterfaceProps) {
     }
   }, [currentQuestion]);
 
-  // Add AI response when answer updates
+  // Auto-play TTS when answer updates (prevent continuous calls)
   useEffect(() => {
-    if (currentAnswer && currentAnswer.answer && currentAnswer.answer.trim()) {
-      // Check if this answer already exists in the current chat messages
-      const currentMessages = getCurrentMessages();
-      const answerAlreadyExists = currentMessages.some(msg => 
-        !msg.isUser && msg.content === currentAnswer.answer
-      );
+    if (currentAnswer && currentAnswer.answer && currentAnswer.answer.trim() && 
+        currentAnswer.answer !== lastPlayedAnswer) {
+      // Auto-play TTS for the answer
+      const readResponse = async () => {
+        try {
+          console.log('Auto-playing AI response with voice:', settings.selectedVoice);
+          setLastPlayedAnswer(currentAnswer.answer);
+          await speak(currentAnswer.answer);
+        } catch (error) {
+          console.error('Auto TTS failed:', error);
+          // Don't show error toast for auto-play failures to avoid interrupting user experience
+        }
+      };
       
-      // Only add the message if it doesn't already exist
-      if (!answerAlreadyExists) {
-        const newMessage: Message = {
-          id: Date.now().toString() + '-a-' + Math.random().toString(36).substring(7),
-          content: currentAnswer.answer,
-          isUser: false,
-          timestamp: new Date()
-        };
-        addMessageToCurrentChat(newMessage);
-      }
-      
-      // Only auto-play TTS if this is a new answer (not already in chat)
-      if (!answerAlreadyExists) {
-        const readResponse = async () => {
-          try {
-            console.log('Auto-playing AI response with voice:', settings.selectedVoice);
-            await speak(currentAnswer.answer);
-          } catch (error) {
-            console.error('Auto TTS failed:', error);
-            // Don't show error toast for auto-play failures to avoid interrupting user experience
-          }
-        };
-        
-        // Small delay to ensure message is rendered before starting TTS
-        setTimeout(readResponse, 500);
-      }
+      // Small delay to ensure message is rendered before starting TTS
+      setTimeout(readResponse, 500);
     }
-  }, [currentAnswer, speak, settings.selectedVoice, getCurrentMessages]);
+  }, [currentAnswer?.answer, speak, settings.selectedVoice, lastPlayedAnswer]);
 
   const handleSendMessage = () => {
     // Prevent sending if currently processing or extracting
@@ -240,6 +239,11 @@ export function ChatInterface({ isExtracting = false }: ChatInterfaceProps) {
 
     addMessageToCurrentChat(newMessage);
     setInputValue('');
+    
+    // Focus input field after sending message
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
     
     // Process the question to get AI response
     processQuestion(question);
@@ -518,6 +522,7 @@ export function ChatInterface({ isExtracting = false }: ChatInterfaceProps) {
               
               <div className="flex items-end gap-3 bg-gray-200 dark:bg-dark-700 rounded-2xl p-3 px-4">
                 <textarea
+                  ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
