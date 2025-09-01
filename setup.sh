@@ -9,6 +9,12 @@ if [ ! -f "setup.sh" ]; then
     exit 1
 fi
 
+# Install root dependencies first (needed for concurrently)
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing root dependencies..."
+    npm install
+fi
+
 # Create .env file if it doesn't exist
 if [ ! -f ".env" ]; then
     echo "📝 Creating .env file from template..."
@@ -85,10 +91,6 @@ cd ..
 
 echo "✅ Setup complete!"
 echo ""
-echo "🚀 To start the application:"
-echo "   1. Run: npm run dev (starts both frontend and backend)"
-echo "   2. Visit: http://localhost:3000"
-echo ""
 echo "🆓 FREE FEATURES INCLUDED:"
 echo "   ✅ Content extraction from websites"
 echo "   ✅ Voice recording (browser-based)"
@@ -101,4 +103,9 @@ echo "   • Add OPENAI_API_KEY to .env for better AI responses"
 echo "   • Install Ollama (ollama.ai) for local AI"
 echo "   • Add ELEVENLABS_API_KEY for premium voice synthesis"
 echo ""
-echo "📚 For more information, see RUNNING_INSTRUCTIONS.md"
+
+echo "🚀 Setup completed! Application will start automatically..."
+echo ""
+echo "   Frontend: http://localhost:5173/"
+echo "   Backend: http://localhost:8000/"
+echo ""

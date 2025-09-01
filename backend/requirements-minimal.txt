@@ -1,4 +1,4 @@
-# Minimal requirements for free version
+# Essential FastAPI components
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 python-multipart==0.0.6
@@ -7,8 +7,17 @@ pydantic-settings==2.1.0
 python-dotenv==1.0.0
 aiofiles==23.2.1
 
-# Web scraping - lightweight
+# Web scraping
 requests==2.31.0
 httpx==0.25.2
 beautifulsoup4==4.12.2
 html2text==2020.1.16
+
+# AI Service (only Groq for fast, free AI)
+groq==0.4.0
+
+# Optional: Only uncomment if needed
+# transformers==4.35.0
+# torch==2.1.0
+# sentence-transformers==2.2.2
+# redis==5.0.1

@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     USE_BROWSER_TTS: bool = True  # Fallback to browser TTS
     
     # Storage Configuration (Optional)
-    DATABASE_URL: str = ""
-    REDIS_URL: str = ""
+    USE_REDIS: bool = False
+    REDIS_URL: str = "redis://localhost:6379"
     
     @property
     def ALLOWED_ORIGINS(self) -> List[str]:
@@ -67,9 +67,7 @@ class Settings(BaseSettings):
     def USE_LOCAL_AI(self) -> bool:
         return self.USE_OLLAMA
         
-    @property
-    def USE_REDIS(self) -> bool:
-        return bool(self.REDIS_URL)
+    # USE_REDIS is now a direct boolean setting
     
     class Config:
         env_file = "../.env"

@@ -40,7 +40,6 @@ voice-qa-app/
 ├── backend/           # FastAPI Python app with async support
 ├── docs/             # Documentation files
 ├── .env.example      # Environment variables template
-├── docker-compose.yml # Container orchestration
 └── setup.sh          # One-command setup script
 ```
 
@@ -70,7 +69,6 @@ voice-qa-app/
 
 ### Optional (for enhanced features)
 - **Redis**: For session caching ([Installation](https://redis.io/docs/getting-started/installation/))
-- **Docker**: For containerized deployment ([Download](https://docker.com/))
 
 ### Browser Compatibility
 - **Voice Features**: Chrome, Edge, Safari (latest versions)
@@ -154,8 +152,8 @@ npm run dev
 brew install redis
 redis-server
 
-# Or use Docker
-docker run -d -p 6379:6379 redis:7-alpine
+# Or run Redis directly
+redis-server
 ```
 
 ## 🧪 Testing
@@ -237,17 +235,13 @@ GET  /api/health        # Health check
 - Use shorter content extracts
 - Consider caching responses
 
-## 🐳 Docker Deployment
+## 🚀 Production Deployment
 
-### Development
-```bash
-docker-compose up --build
-```
-
-### Production
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
+For production deployment, consider:
+- Using a process manager like PM2 for Node.js
+- Setting up reverse proxy with nginx
+- Using environment-specific configuration
+- Implementing proper logging and monitoring
 
 ## 🤝 Contributing
 

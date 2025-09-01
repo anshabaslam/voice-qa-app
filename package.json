@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "description": "Voice-Driven Q&A Application with React and FastAPI",
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "start": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "npm run setup && concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "setup": "node -e \"process.platform === 'win32' ? require('child_process').execSync('setup.bat', {stdio: 'inherit'}) : require('child_process').execSync('./setup.sh', {stdio: 'inherit'})\"",
+    "dev:backend": "node -e \"process.platform === 'win32' ? require('child_process').execSync('cd backend && venv\\\\Scripts\\\\activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000', {stdio: 'inherit', shell: true}) : require('child_process').execSync('cd backend && source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000', {stdio: 'inherit', shell: true})\"",
     "dev:frontend": "cd frontend && npm run dev",
     "install:all": "cd backend && pip install -r requirements.txt && cd ../frontend && npm install",
     "build": "cd frontend && npm run build",
     "test": "cd backend && pytest && cd ../frontend && npm test",
-    "lint": "cd backend && black . && isort . && cd ../frontend && npm run lint",
-    "docker:dev": "docker-compose up --build",
-    "docker:prod": "docker-compose -f docker-compose.prod.yml up -d"
+    "lint": "cd backend && black . && isort . && cd ../frontend && npm run lint"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"
