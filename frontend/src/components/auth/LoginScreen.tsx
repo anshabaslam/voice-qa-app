@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import { MicrophoneIcon, SunIcon, MoonIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid';
 import { LoadingSpinner } from '../LoadingSpinner';
+import { PixelatedCanvas } from '../ui/pixelated-canvas';
+import localImage from '../../assets/image.png';
+import whiteLogo from '../../assets/logo-white.png';
 import toast from 'react-hot-toast';
 
 export function LoginScreen() {
@@ -10,7 +12,6 @@ export function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,65 +28,96 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      {/* Theme Toggle */}
-      <button
-        onClick={toggleTheme}
-        className="fixed top-4 right-4 p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-200"
-      >
-        {theme === 'light' ? (
-          <MoonIcon className="h-5 w-5 text-gray-600" />
-        ) : (
-          <SunIcon className="h-5 w-5 text-yellow-500" />
-        )}
-      </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+      {/* Pixelated Background Canvas */}
+      <div className="absolute inset-0 z-0 pointer-events-auto">
+        <PixelatedCanvas
+          src={localImage}
+          width={window.innerWidth}
+          height={window.innerHeight}
+          cellSize={4}
+          dotScale={0.9}
+          shape="square"
+          backgroundColor="#000000"
+          dropoutStrength={0.1}
+          interactive
+          distortionStrength={20}
+          distortionRadius={200}
+          distortionMode="swirl"
+          followSpeed={0.2}
+          jitterStrength={6}
+          jitterSpeed={1.2}
+          sampleAverage
+          fadeOnLeave
+          fadeSpeed={0.08}
+          className="w-full h-full object-cover"
+          responsive
+        />
+      </div>
+      
+      {/* Dark gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 z-5 pointer-events-none"></div>
 
-      <div className="max-w-md w-full">
-        {/* Logo and Title */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-4 bg-primary-100 dark:bg-primary-900 rounded-full mb-4">
-            <MicrophoneIcon className="h-12 w-12 text-primary-600 dark:text-primary-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Voice Q&A Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Sign in to access your intelligent voice assistant
-          </p>
+      <div className="max-w-sm w-full relative z-20">
+        {/* Logo */}
+        <div className="text-center mb-12">
+          <img src={whiteLogo} alt="Logo" className="h-10 mx-auto mb-8" />
+          {/* <h1 className="text-3xl font-semibold text-white mb-2">Welcome Back</h1> */}
+          <p className="text-gray-400 text-sm">Please sign in to continue</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8">
+        <div className="bg-dark-900/50 backdrop-blur-sm rounded-3xl p-8 border border-gray-800">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username Field */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-3">
                 Username
               </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                placeholder="Enter username"
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  </svg>
+                </div>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-black/30 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 autofill:bg-black/30 autofill:text-white"
+                  style={{
+                    WebkitBoxShadow: '0 0 0 1000px rgba(0, 0, 0, 0.3) inset',
+                    WebkitTextFillColor: 'white',
+                  }}
+                  placeholder="Enter Username"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-3">
                 Password
               </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 pr-12"
-                  placeholder="Enter password"
+                  className="w-full pl-10 pr-12 py-3 bg-black/30 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 autofill:bg-black/30 autofill:text-white"
+                  style={{
+                    WebkitBoxShadow: '0 0 0 1000px rgba(0, 0, 0, 0.3) inset',
+                    WebkitTextFillColor: 'white',
+                  }}
+                  placeholder="Enter Password"
                   disabled={isLoading}
                 />
                 <button
@@ -95,19 +127,20 @@ export function LoginScreen() {
                   disabled={isLoading}
                 >
                   {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                    <EyeSlashIcon className="h-5 w-5 text-gray-500" />
                   ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
+                    <EyeIcon className="h-5 w-5 text-gray-500" />
                   )}
                 </button>
               </div>
             </div>
 
+
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+              className="w-full bg-[#4F7CF7] hover:bg-[#4F7CF7]/90 disabled:bg-gray-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center"
             >
               {isLoading ? (
                 <>
@@ -119,20 +152,6 @@ export function LoginScreen() {
               )}
             </button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-            <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">Demo Credentials:</h4>
-            <div className="text-sm text-amber-700 dark:text-amber-300">
-              <p><strong>Username:</strong> admin</p>
-              <p><strong>Password:</strong> admin123</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-600 dark:text-gray-400">
-          Built with React, FastAPI, and modern AI technologies
         </div>
       </div>
     </div>
