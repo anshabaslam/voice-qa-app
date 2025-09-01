@@ -14,6 +14,7 @@ import { apiService } from '../services/api';
 import { useAppStore } from '../stores/appStore';
 import { toast } from '../utils/toast';
 import { ChatInterface } from './ChatInterface';
+import { WalkthroughTour } from './WalkthroughTour';
 
 const formatRelativeTime = (timestamp: Date | string) => {
   const now = new Date();
@@ -35,11 +36,23 @@ export function VoiceQAPage() {
   const [newUrl, setNewUrl] = useState('');
   const [showAddUrl, setShowAddUrl] = useState(false);
   const [extractingUrls, setExtractingUrls] = useState<Set<string>>(new Set());
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
   
   // Initialize dummy data on mount if needed
   useEffect(() => {
     initializeDummyData();
   }, [initializeDummyData]);
+
+  // Check if this is user's first visit
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('voice-qa-tour-completed');
+    if (!hasSeenTour) {
+      setIsFirstVisit(true);
+      // Show tour after a small delay to let the component mount
+      setTimeout(() => setShowWalkthrough(true), 1000);
+    }
+  }, []);
 
   const handleAddUrl = async () => {
     const url = newUrl.trim();
@@ -109,6 +122,12 @@ export function VoiceQAPage() {
     }
   };
 
+  const handleTourComplete = () => {
+    setShowWalkthrough(false);
+    localStorage.setItem('voice-qa-tour-completed', 'true');
+    setIsFirstVisit(false);
+  };
+
   const validateUrl = (url: string): boolean => {
     try {
       new URL(url);
@@ -134,9 +153,17 @@ export function VoiceQAPage() {
             <button 
               onClick={createNewChat}
               className="flex items-center gap-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              data-tour="new-chat-button"
             >
               <PlusIcon className="w-3 h-3" />
               <span className="text-xs">New</span>
+            </button>
+            <button 
+              onClick={() => setShowWalkthrough(true)}
+              className="flex items-center gap-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Show walkthrough tour"
+            >
+              <span className="text-xs">?</span>
             </button>
             <button
               onClick={() => setIsSidebarOpen(false)}
@@ -149,7 +176,7 @@ export function VoiceQAPage() {
 
 
         {/* Content Sources Section */}
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4" data-tour="content-sources">
           <div className="mb-3">
             <div className="flex items-center justify-between mb-2 mt-4">
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-2">
@@ -158,10 +185,19 @@ export function VoiceQAPage() {
               </h3>
               <button
                 onClick={() => setShowAddUrl(!showAddUrl)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors ${
+                  isFirstVisit && urls.length === 0 && !showAddUrl
+                    ? 'animate-pulse ring-2 ring-blue-500 ring-offset-2 bg-blue-50 dark:bg-blue-900/20' 
+                    : ''
+                }`}
                 title="Add URL"
+                data-tour="add-content-button"
               >
-                <PlusIcon className="w-3 h-3 text-gray-400" />
+                <PlusIcon className={`w-3 h-3 ${
+                  isFirstVisit && urls.length === 0 && !showAddUrl
+                    ? 'text-blue-600' 
+                    : 'text-gray-400'
+                }`} />
               </button>
             </div>
 
@@ -246,7 +282,7 @@ export function VoiceQAPage() {
         </div>
 
         {/* Chat History */}
-        <div className="flex-1 overflow-hidden px-4">
+        <div className="flex-1 overflow-hidden px-4" data-tour="chat-history">
           <div className="mb-3">
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2 flex items-center gap-2">
               <ChatBubbleLeftRightIcon className="w-4 h-4" />
@@ -328,10 +364,16 @@ export function VoiceQAPage() {
         )}
 
         {/* Chat Interface */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0" data-tour="chat-interface">
           <ChatInterface />
         </div>
       </div>
+
+      {/* Walkthrough Tour */}
+      <WalkthroughTour 
+        isOpen={showWalkthrough}
+        onComplete={handleTourComplete}
+      />
     </div>
   );
 }

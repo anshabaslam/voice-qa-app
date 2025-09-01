@@ -15,6 +15,33 @@
     @apply bg-gray-50 dark:bg-dark-900 text-gray-900 dark:text-white antialiased;
   }
 
+  /* Walkthrough Tour Theme Variables */
+  :root {
+    /* Light theme */
+    --tooltip-bg: rgba(255, 255, 255, 0.95);
+    --tooltip-border: rgba(229, 231, 235, 0.8);
+    --tooltip-text: #111827;
+    --tooltip-title: #111827;
+    --tooltip-content: #4B5563;
+    --button-secondary: #6B7280;
+    --button-secondary-border: #D1D5DB;
+    --button-close: #6B7280;
+    --progress-bg: #E5E7EB;
+  }
+
+  .dark {
+    /* Dark theme */
+    --tooltip-bg: rgba(31, 41, 55, 0.95);
+    --tooltip-border: rgba(75, 85, 99, 0.8);
+    --tooltip-text: #F9FAFB;
+    --tooltip-title: #F9FAFB;
+    --tooltip-content: #D1D5DB;
+    --button-secondary: #9CA3AF;
+    --button-secondary-border: #4B5563;
+    --button-close: #9CA3AF;
+    --progress-bg: #4B5563;
+  }
+
   * {
     @apply border-gray-200 dark:border-dark-700;
   }
@@ -66,6 +93,54 @@
   
   .voice-visualizer {
     @apply flex items-end justify-center space-x-1 h-16;
+  }
+
+  /* Joyride Custom Styles */
+  .joyride-tooltip {
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
+
+  /* Ensure highlighted elements are crisp and not blurred */
+  .react-joyride__spotlight {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+  }
+
+  /* Enhanced spotlight glow effect */
+  .react-joyride__spotlight::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, rgba(249, 115, 22, 0.3), rgba(251, 146, 60, 0.2), rgba(249, 115, 22, 0.3));
+    border-radius: inherit;
+    z-index: -1;
+    animation: spotlight-glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes spotlight-glow {
+    0% {
+      opacity: 0.2;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0.4;
+      transform: scale(1.01);
+    }
+  }
+  
+  /* Button hover effects */
+  button[data-action="next"]:hover {
+    background-color: #2563EB !important;
+  }
+  
+  button[data-action="back"]:hover,
+  button[data-action="skip"]:hover {
+    background-color: var(--tooltip-bg, rgba(249, 250, 251, 0.8)) !important;
   }
   
   .voice-bar {

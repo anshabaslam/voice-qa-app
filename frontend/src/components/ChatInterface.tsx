@@ -512,6 +512,7 @@ export function ChatInterface() {
                       : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
                   } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title={isRecording ? 'Stop recording' : 'Start voice recording'}
+                  data-tour="voice-button"
                 >
                   {isRecording ? (
                     <div className="relative">

@@ -55,6 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (username === DEMO_CREDENTIALS.username && password === DEMO_CREDENTIALS.password) {
       setUser(DEMO_CREDENTIALS.user);
       localStorage.setItem('voice-qa-user', JSON.stringify(DEMO_CREDENTIALS.user));
+      
+      // Clear tour cache on login to show tutorial for new sessions
+      localStorage.removeItem('voice-qa-tour-completed');
+      
       setIsLoading(false);
       return true;
     }
