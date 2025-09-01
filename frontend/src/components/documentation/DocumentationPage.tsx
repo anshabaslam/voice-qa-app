@@ -15,36 +15,42 @@ export function DocumentationPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       <div className="max-w-5xl mx-auto px-6 py-12">
         {/* Table of Contents */}
-        <div className="mb-16 p-6 bg-white dark:bg-dark-800 rounded-2xl border border-gray-300 dark:border-dark-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <div className="mb-16">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <BookOpenIcon className="w-5 h-5" />
             Table of Contents
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <a href="#quick-start" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-              <CommandLineIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Start</span>
-            </a>
-            <a href="#voice-features" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-              <MicrophoneIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Voice Features</span>
-            </a>
-            <a href="#content-sources" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-              <BookOpenIcon className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Content Sources</span>
-            </a>
-            <a href="#analytics" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-              <ChartBarIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Analytics</span>
-            </a>
-            <a href="#best-practices" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-              <SparklesIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Best Practices</span>
-            </a>
-            <a href="#troubleshooting" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-              <QuestionMarkCircleIcon className="w-4 h-4 text-red-600 dark:text-red-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Troubleshooting</span>
-            </a>
+          <div className="inline-block p-6 border border-gray-300 dark:border-dark-600 rounded-[20px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <a href="#quick-start" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <CommandLineIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Start</span>
+              </a>
+              <a href="#voice-features" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <MicrophoneIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Voice Features</span>
+              </a>
+              <a href="#content-sources" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <BookOpenIcon className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Content Sources</span>
+              </a>
+              <a href="#settings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <Cog6ToothIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Settings</span>
+              </a>
+              <a href="#analytics" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <ChartBarIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Analytics</span>
+              </a>
+              <a href="#best-practices" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <SparklesIcon className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Best Practices</span>
+              </a>
+              <a href="#troubleshooting" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <QuestionMarkCircleIcon className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Troubleshooting</span>
+              </a>
+            </div>
           </div>
         </div>
 
@@ -67,23 +73,25 @@ export function DocumentationPage() {
                 Start by adding web URLs that contain the information you want to query:
               </p>
               <ol className="list-decimal list-inside space-y-3 text-gray-600 dark:text-gray-400 ml-6 text-lg">
-                <li>Navigate to the Voice Q&A page</li>
-                <li>Add at least 1 web URLs in the Content Sources section</li>
-                <li>Wait for content extraction to complete</li>
-                <li>Verify the content has been processed successfully</li>
+                <li>Navigate to the Voice Q&A page from the main sidebar</li>
+                <li>Click the + icon in the Content Sources section</li>
+                <li>Add 1-5 web URLs (content will auto-extract after each URL)</li>
+                <li>Wait for the extraction process to complete for each URL</li>
+                <li>Verify extracted content appears with word counts and success status</li>
               </ol>
             </div>
 
             <div>
               <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Step 2: Ask Questions</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Once your content is ready, you can start asking questions:
+                Once your content is ready, you can start asking questions using voice or text:
               </p>
               <ol className="list-decimal list-inside space-y-3 text-gray-600 dark:text-gray-400 ml-6 text-lg">
-                <li>Click the microphone button to start recording</li>
-                <li>Ask your question clearly and concisely</li>
-                <li>Click stop when finished</li>
-                <li>Receive AI-powered responses with source citations</li>
+                <li><strong>Voice:</strong> Click the microphone button to start recording your question</li>
+                <li>Speak clearly and release the button when finished</li>
+                <li><strong>Text:</strong> Type your question directly in the chat input field</li>
+                <li>Receive AI-powered responses with TTS audio playback</li>
+                <li>View chat history and manage multiple conversations</li>
               </ol>
             </div>
           </div>
@@ -101,7 +109,7 @@ export function DocumentationPage() {
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200 dark:border-blue-800/30 rounded-xl p-8">
               <h3 className="text-2xl font-semibold text-blue-900 dark:text-blue-300 mb-4">Voice-Powered Q&A System</h3>
               <p className="text-lg text-blue-800 dark:text-blue-200 leading-relaxed">
-                Experience seamless voice interaction with our advanced speech recognition technology. Ask questions naturally and receive AI-powered answers with source citations, all through intuitive voice commands.
+                Experience seamless voice interaction with browser-based speech recognition and ElevenLabs TTS. Ask questions naturally using your microphone and receive AI-powered answers with high-quality voice synthesis playback.
               </p>
             </div>
 
@@ -113,9 +121,9 @@ export function DocumentationPage() {
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-4">
                     <MicrophoneIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-lg">Real-time Recording</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-lg">Voice Recording</h4>
                   <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                    Capture your voice with high-quality real-time recording and instant visual feedback for optimal question clarity.
+                    Push-to-talk voice recording with visual feedback and automatic speech-to-text conversion using browser APIs.
                   </p>
                 </div>
                 
@@ -133,9 +141,9 @@ export function DocumentationPage() {
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-4">
                     <CommandLineIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-lg">Smart Processing</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-lg">TTS Playback</h4>
                   <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                    Intelligent question analysis and context understanding for accurate responses with relevant source citations.
+                    High-quality text-to-speech using ElevenLabs voices with configurable voice selection and audio playback controls.
                   </p>
                 </div>
               </div>
@@ -148,10 +156,6 @@ export function DocumentationPage() {
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-4 text-lg">Speech Recognition</h4>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-gray-600 dark:text-gray-400">Multi-language support (English, Spanish, French, German)</span>
-                    </div>
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
                       <span className="text-gray-600 dark:text-gray-400">Accent adaptation and regional dialects</span>
@@ -274,46 +278,92 @@ export function DocumentationPage() {
           </div>
         </section>
 
-        {/* Analytics Section */}
-        <section id="analytics" className="mb-20">
+        {/* Settings & Configuration Section */}
+        <section id="settings" className="mb-20">
           <div className="flex items-center gap-3 mb-8">
-            <ChartBarIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Analytics</h2>
+            <Cog6ToothIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Settings & Configuration</h2>
           </div>
           
           <div className="space-y-8">
             <div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Usage Metrics</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Voice Settings</h3>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-                Monitor your Voice Q&A application's performance and user engagement:
+                Configure text-to-speech options for AI response playback:
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800 text-center">
-                  <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2 text-lg">Questions Asked</h4>
-                  <p className="text-4xl font-bold text-blue-900 dark:text-blue-300">1,247</p>
-                </div>
-                <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-xl border border-green-200 dark:border-green-800 text-center">
-                  <h4 className="font-semibold text-green-900 dark:text-green-300 mb-2 text-lg">Success Rate</h4>
-                  <p className="text-4xl font-bold text-green-900 dark:text-green-300">94.2%</p>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-800 text-center">
-                  <h4 className="font-semibold text-purple-900 dark:text-purple-300 mb-2 text-lg">Avg Response Time</h4>
-                  <p className="text-4xl font-bold text-purple-900 dark:text-purple-300">1.8s</p>
-                </div>
+              <div className="bg-white dark:bg-dark-800 p-6 rounded-xl border border-gray-300 dark:border-dark-700">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-4 text-lg">TTS Configuration</h4>
+                <ul className="list-disc list-inside space-y-3 text-gray-600 dark:text-gray-400 ml-6">
+                  <li>Select from available ElevenLabs voices</li>
+                  <li>Test voice samples before selection</li>
+                  <li>Fallback to browser speech synthesis if ElevenLabs unavailable</li>
+                  <li>Audio controls for play/pause/stop during response</li>
+                </ul>
               </div>
             </div>
 
             <div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Performance Insights</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Chat Management</h3>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-                Use analytics to improve your application's effectiveness:
+                Organize your conversations and content sources:
               </p>
-              <ul className="list-disc list-inside space-y-3 text-gray-600 dark:text-gray-400 ml-6 text-lg">
-                <li>Track question success rates and response quality</li>
-                <li>Monitor content source effectiveness</li>
-                <li>Identify common user queries and topics</li>
-                <li>Optimize response times and accuracy</li>
-              </ul>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-dark-800 p-6 rounded-xl border border-gray-300 dark:border-dark-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-lg">Chat History</h4>
+                  <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+                    <li>• Auto-saved conversations</li>
+                    <li>• Quick chat switching</li>
+                    <li>• Delete unwanted chats</li>
+                    <li>• Persistent content sources per chat</li>
+                  </ul>
+                </div>
+                <div className="bg-white dark:bg-dark-800 p-6 rounded-xl border border-gray-300 dark:border-dark-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-lg">Session Management</h4>
+                  <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+                    <li>• New chat creates fresh session</li>
+                    <li>• Browser refresh starts new session</li>
+                    <li>• Content sources preserved per chat</li>
+                    <li>• Walkthrough tour for new users</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Analytics Section */}
+        <section id="analytics" className="mb-20">
+          <div className="flex items-center gap-3 mb-8">
+            <ChartBarIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Analytics Dashboard</h2>
+          </div>
+          
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Available Metrics</h3>
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+                The analytics page provides comprehensive insights into your application usage:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-dark-800 p-6 rounded-xl border border-gray-300 dark:border-dark-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 text-lg">Usage Analytics</h4>
+                  <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+                    <li>• Interactive charts and graphs</li>
+                    <li>• Question volume tracking</li>
+                    <li>• Session duration metrics</li>
+                    <li>• Response time analysis</li>
+                  </ul>
+                </div>
+                <div className="bg-white dark:bg-dark-800 p-6 rounded-xl border border-gray-300 dark:border-dark-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 text-lg">Performance Insights</h4>
+                  <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+                    <li>• Content extraction success rates</li>
+                    <li>• Voice recognition accuracy</li>
+                    <li>• TTS usage statistics</li>
+                    <li>• User engagement patterns</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -422,19 +472,8 @@ export function DocumentationPage() {
         {/* Footer */}
         <div className="mt-20 pt-12 border-t border-gray-300 dark:border-dark-700">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-6 mb-4">
-              <button className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
-                Edit this page
-              </button>
-              <button className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
-                Report an issue
-              </button>
-              <button className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
-                Suggest improvements
-              </button>
-            </div>
             <p className="text-gray-500 dark:text-gray-400">
-              Voice Q&A Documentation - Built with ❤️ for developers
+              by Anshab Aslam
             </p>
           </div>
         </div>
