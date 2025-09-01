@@ -72,8 +72,8 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, onPageChange }) => {
               <Bars3Icon className="w-5 h-5" />
             </button>
 
-            {/* Live Time Display */}
-            <div className="flex items-center">
+            {/* Live Time Display - Hidden on Mobile */}
+            <div className="hidden sm:flex items-center">
               <div className="px-4 py-2.5 w-52 bg-white/60 dark:bg-dark-800/60 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-dark-500/50 rounded-xl shadow-sm transition-all 150ms ease-in-out">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-900 dark:text-white font-mono">
