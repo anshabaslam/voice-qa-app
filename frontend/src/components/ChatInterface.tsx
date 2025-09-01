@@ -59,9 +59,30 @@ export function ChatInterface() {
     try {
       // Check if content sources are available
       if (!hasContentSources) {
-        // Create a mock response asking to add content sources with unique timestamp
+        // Check if we've already shown the "add content sources" message in this chat
+        const currentMessages = getCurrentMessages();
+        const hasAlreadyShownContentSourcesMessage = currentMessages.some(msg => 
+          !msg.isUser && msg.content.includes("Please add content sources from the sidebar")
+        );
+        
+        let mockAnswer;
+        if (!hasAlreadyShownContentSourcesMessage) {
+          // First time - show the instruction message
+          mockAnswer = "Please add content sources from the sidebar to get accurate answers. I need web content to provide you with relevant information.";
+        } else {
+          // Subsequent times - provide a more conversational response
+          const responses = [
+            "I'd love to help answer that, but I still need some web content to work with. Could you add some URLs to the Content Sources section?",
+            "I'm ready to assist, but I need you to add some web sources first so I can provide accurate information.",
+            "That's an interesting question! Please add some web content sources so I can give you a well-informed answer.",
+            "I want to give you the best answer possible, but I'll need some web content to reference. Please add URLs to get started.",
+            "Great question! Add some web sources to the sidebar and I'll be able to provide you with detailed, accurate information."
+          ];
+          mockAnswer = responses[Math.floor(Math.random() * responses.length)];
+        }
+        
         const mockResponse = {
-          answer: "Please add content sources from the sidebar to get accurate answers. I need web content to provide you with relevant information.",
+          answer: mockAnswer,
           sources: [],
           session_id: sessionId || 'no-session',
           confidence: 0,
@@ -203,7 +224,7 @@ export function ChatInterface() {
     processQuestion(question);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -470,7 +491,7 @@ export function ChatInterface() {
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
                   placeholder={isRecording ? "Listening..." : "Message Voice Q&A..."}
                   className="flex-1 bg-transparent border-0 resize-none focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm leading-relaxed"
                   rows={1}

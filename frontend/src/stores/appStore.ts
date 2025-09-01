@@ -331,24 +331,18 @@ export const useAppStore = create<AppStore>()(
   // Chat management implementations
   createNewChat: () => {
     const chatId = `chat-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const { chatHistory, extractedContent, sessionId, urls } = get();
+    const { chatHistory } = get();
     
-    // Generate title from extracted content if available
-    let chatTitle = 'New Chat';
-    if (extractedContent.length > 0) {
-      const mainContent = extractedContent.find(content => content.success && content.title);
-      chatTitle = mainContent ? mainContent.title : 'Q&A Session';
-    }
-    
+    // New chat always starts completely fresh
     const newChat: ChatSession = {
       id: chatId,
-      title: chatTitle,
+      title: 'New Chat',
       messages: [],
       lastMessage: '',
       timestamp: new Date(),
-      sessionId: sessionId || undefined,
-      extractedContent: [...extractedContent], // Save current extracted content with this chat
-      urls: [...urls], // Save current URLs with this chat
+      sessionId: undefined,
+      extractedContent: [], // Start with empty content
+      urls: [], // Start with empty URLs
     };
     
     set({
@@ -356,6 +350,12 @@ export const useAppStore = create<AppStore>()(
       currentChatId: chatId,
       currentQuestion: '',
       currentAnswer: null,
+      // Clear global state for fresh start
+      extractedContent: [],
+      urls: [],
+      sessionId: null,
+      isLoading: false,
+      error: null,
     });
     
     return chatId;
@@ -458,7 +458,7 @@ export const useAppStore = create<AppStore>()(
   },
   
   // Analytics tracking methods
-  trackQuestion: (question: string) => {
+  trackQuestion: (_question: string) => {
     const { analytics } = get();
     const today = new Date().getDate() - 1; // for array index
     const newDailyQuestions = [...analytics.dailyQuestions];
@@ -473,7 +473,7 @@ export const useAppStore = create<AppStore>()(
     });
   },
   
-  trackAnswer: (answer: string, responseTime: number) => {
+  trackAnswer: (_answer: string, responseTime: number) => {
     const { analytics } = get();
     const newResponseTime = Math.round((analytics.responseTime + responseTime) / 2);
     
@@ -510,6 +510,18 @@ export const useAppStore = create<AppStore>()(
         }
         if (state && !state.analytics) {
           state.analytics = createInitialAnalytics();
+        }
+        // Create a new chat on refresh (clear current session)
+        if (state) {
+          // Clear current session data to force new chat creation
+          state.currentChatId = null;
+          state.extractedContent = [];
+          state.urls = [];
+          state.sessionId = null;
+          state.currentQuestion = '';
+          state.currentAnswer = null;
+          state.isLoading = false;
+          state.error = null;
         }
       },
     }
