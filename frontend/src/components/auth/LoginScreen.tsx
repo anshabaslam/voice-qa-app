@@ -11,13 +11,29 @@ export function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({ username: '', password: '' });
   const { login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username.trim() || !password.trim()) {
-      toast.error('Please enter both username and password');
+    // Reset errors
+    setErrors({ username: '', password: '' });
+    
+    // Validate fields
+    const newErrors = { username: '', password: '' };
+    
+    if (!username.trim()) {
+      newErrors.username = 'Username is required';
+    }
+    
+    if (!password.trim()) {
+      newErrors.password = 'Password is required';
+    }
+    
+    // If there are errors, set them and return
+    if (newErrors.username || newErrors.password) {
+      setErrors(newErrors);
       return;
     }
 
@@ -60,15 +76,15 @@ export function LoginScreen() {
 
       <div className="max-w-sm w-full relative z-20">
         {/* Logo */}
-        <div className="text-center mb-12">
-          <img src={whiteLogo} alt="Logo" className="h-10 mx-auto mb-8" />
-          {/* <h1 className="text-3xl font-semibold text-white mb-2">Welcome Back</h1> */}
+        <div className="text-center mb-7">
+          <img src={whiteLogo} alt="Logo" className="h-10 mx-auto mb-1" />
           <p className="text-gray-400 text-sm">Please sign in to continue</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-dark-900/50 backdrop-blur-sm rounded-3xl p-8 border border-gray-800">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-dark-900/20 backdrop-blur-sm rounded-3xl p-8 border border-gray-800">
+
+          <form onSubmit={handleSubmit} className="space-y-0">
             {/* Username Field */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-3">
@@ -84,8 +100,17 @@ export function LoginScreen() {
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-black/30 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 autofill:bg-black/30 autofill:text-white"
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (errors.username) {
+                      setErrors(prev => ({ ...prev, username: '' }));
+                    }
+                  }}
+                  className={`w-full pl-10 pr-4 py-3 bg-black/30 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 autofill:bg-black/30 autofill:text-white ${
+                    errors.username 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-700 focus:ring-blue-500'
+                  }`}
                   style={{
                     WebkitBoxShadow: '0 0 0 1000px rgba(0, 0, 0, 0.3) inset',
                     WebkitTextFillColor: 'white',
@@ -93,6 +118,11 @@ export function LoginScreen() {
                   placeholder="Enter Username"
                   disabled={isLoading}
                 />
+              </div>
+              <div className="h-6 mt-2">
+                {errors.username && (
+                  <p className="text-sm text-red-400">{errors.username}</p>
+                )}
               </div>
             </div>
 
@@ -111,8 +141,17 @@ export function LoginScreen() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-black/30 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 autofill:bg-black/30 autofill:text-white"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) {
+                      setErrors(prev => ({ ...prev, password: '' }));
+                    }
+                  }}
+                  className={`w-full pl-10 pr-12 py-3 bg-black/30 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 autofill:bg-black/30 autofill:text-white ${
+                    errors.password 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-700 focus:ring-blue-500'
+                  }`}
                   style={{
                     WebkitBoxShadow: '0 0 0 1000px rgba(0, 0, 0, 0.3) inset',
                     WebkitTextFillColor: 'white',
@@ -133,8 +172,12 @@ export function LoginScreen() {
                   )}
                 </button>
               </div>
+              <div className="h-6 mt-2">
+                {errors.password && (
+                  <p className="text-sm text-red-400">{errors.password}</p>
+                )}
+              </div>
             </div>
-
 
             {/* Submit Button */}
             <button
@@ -152,6 +195,13 @@ export function LoginScreen() {
               )}
             </button>
           </form>
+
+          {/* Footer with your name inside card */}
+          <div className="text-center mt-6 pt-6 border-t border-gray-700/50">
+            <p className="text-gray-500 text-sm">
+              Designed & Built by <span className="text-white font-medium">Anshab Aslam</span>
+            </p>
+          </div>
         </div>
       </div>
     </div>

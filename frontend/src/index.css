@@ -18,6 +18,25 @@
   * {
     @apply border-gray-200 dark:border-dark-700;
   }
+
+  /* Fix autofill styling */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.3) inset !important;
+    -webkit-text-fill-color: white !important;
+    caret-color: white !important;
+  }
+  
+  input[type="password"]:-webkit-autofill,
+  input[type="password"]:-webkit-autofill:hover,
+  input[type="password"]:-webkit-autofill:focus,
+  input[type="password"]:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.3) inset !important;
+    -webkit-text-fill-color: white !important;
+    caret-color: white !important;
+  }
   
   #root {
     @apply h-full;
