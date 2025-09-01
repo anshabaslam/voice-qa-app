@@ -1,13 +1,11 @@
-import React from 'react';
 import {
   BookOpenIcon,
-  PlayIcon,
-  SparklesIcon,
+  ChartBarIcon,
   Cog6ToothIcon,
-  QuestionMarkCircleIcon,
-  MicrophoneIcon,
   CommandLineIcon,
-  ChartBarIcon
+  MicrophoneIcon,
+  QuestionMarkCircleIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 export function DocumentationPage() {

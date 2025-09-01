@@ -15,7 +15,7 @@ export function ChatInterface() {
   const [shakeMessageId, setShakeMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentAnswer, currentQuestion, voiceState, sessionId, extractedContent, setCurrentAnswer, setLoading, setError, getCurrentMessages, addMessageToCurrentChat, currentChatId, createNewChat, trackQuestion, trackAnswer, addActivity } = useAppStore();
-  const { speak, settings, stopSpeaking } = useVoice();
+  const { speak, settings } = useVoice();
   const { isSupported, isRecording, isProcessing, audioLevel, transcript, startRecording, stopRecording } = useVoiceRecording();
   const voiceIsProcessing = voiceState.isProcessing;
   const hasContentSources = extractedContent.length > 0;

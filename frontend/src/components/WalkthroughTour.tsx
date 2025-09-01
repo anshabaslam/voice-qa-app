@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import Joyride, { STATUS } from 'react-joyride';
+import { useEffect, useState } from 'react';
 import type { CallBackProps, Step } from 'react-joyride';
+import Joyride, { STATUS } from 'react-joyride';
 
 interface WalkthroughTourProps {
   isOpen: boolean;

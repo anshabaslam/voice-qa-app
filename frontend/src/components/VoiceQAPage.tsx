@@ -14,10 +14,12 @@ import { useAppStore } from '../stores/appStore';
 import { toast } from '../utils/toast';
 import { ChatInterface } from './ChatInterface';
 import { WalkthroughTour } from './WalkthroughTour';
+import { useVoice } from '../contexts/VoiceContext';
 
 
 export function VoiceQAPage() {
-  const { extractedContent, isLoading, error, urls, addUrl, removeUrl, setExtractedContent, setSessionId, chatHistory, selectChat, createNewChat, deleteChat, currentChatId, initializeDummyData } = useAppStore();
+  const { extractedContent, error, urls, addUrl, removeUrl, setExtractedContent, setSessionId, chatHistory, selectChat, createNewChat, deleteChat, currentChatId, initializeDummyData } = useAppStore();
+  const { stopSpeaking } = useVoice();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [newUrl, setNewUrl] = useState('');
   const [showAddUrl, setShowAddUrl] = useState(false);
@@ -39,6 +41,19 @@ export function VoiceQAPage() {
       setTimeout(() => setShowWalkthrough(true), 1000);
     }
   }, []);
+
+  // Wrapper functions that stop voice before chat actions
+  const handleSelectChat = (chatId: string) => {
+    console.log('🔄 Switching to chat:', chatId, '- stopping voice playback');
+    stopSpeaking();
+    selectChat(chatId);
+  };
+
+  const handleCreateNewChat = () => {
+    console.log('🆕 Creating new chat - stopping voice playback');
+    stopSpeaking();
+    createNewChat();
+  };
 
   const handleAddUrl = async () => {
     const url = newUrl.trim();
@@ -143,7 +158,7 @@ export function VoiceQAPage() {
           </div>
           <div className="flex items-center gap-2">
             <button 
-              onClick={createNewChat}
+              onClick={handleCreateNewChat}
               className="flex items-center gap-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               data-tour="new-chat-button"
             >
@@ -286,7 +301,7 @@ export function VoiceQAPage() {
               chatHistory.map((chat) => (
                 <div 
                   key={chat.id} 
-                  onClick={() => selectChat(chat.id)}
+                  onClick={() => handleSelectChat(chat.id)}
                   className={`group p-2 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer transition-colors rounded-md ${
                     currentChatId === chat.id ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700' : ''
                   }`}

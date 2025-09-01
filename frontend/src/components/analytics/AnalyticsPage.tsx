@@ -2,7 +2,7 @@ import {
   CheckBadgeIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon,
   CubeIcon,
   CurrencyDollarIcon,
-  MicrophoneIcon, QuestionMarkCircleIcon, UsersIcon
+  MicrophoneIcon, UsersIcon
 } from '@heroicons/react/24/outline';
 import React, { useState } from 'react';
 import Chart from 'react-apexcharts';
@@ -536,116 +536,13 @@ const RecentActivitiesTable = () => {
     },
   ];
 
-  // Custom expanded content
-  const expandedContent = (row:any) => {
-    const activity = row.original;
-    return (
-      <div className="px-4 py-4 bg-gray-900/30 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Activity Details */}
-          <div>
-            <h4 className="text-gray-900 dark:text-white font-medium mb-3 text-sm flex items-center gap-2">
-              <MicrophoneIcon className="w-4 h-4" />
-              Activity Details
-            </h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Session ID:</span>
-                <span className="text-gray-900 dark:text-white font-mono">
-                  {activity.sessionId}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Response Time:</span>
-                <span className="text-gray-900 dark:text-white">
-                  {activity.responseTime}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Category:</span>
-                <span className="text-gray-900 dark:text-white">{activity.category}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* User Info */}
-          <div>
-            <h4 className="text-gray-900 dark:text-white font-medium mb-3 text-sm flex items-center gap-2">
-              <UsersIcon className="w-4 h-4" />
-              User Information
-            </h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">User ID:</span>
-                <span className="text-gray-900 dark:text-white">{activity.userId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Full Name:</span>
-                <span className="text-gray-900 dark:text-white">{activity.user}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Items Processed:</span>
-                <span className="text-gray-900 dark:text-white">{activity.amount}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Status & Actions */}
-          <div>
-            <h4 className="text-gray-900 dark:text-white font-medium mb-3 text-sm flex items-center gap-2">
-              <CheckBadgeIcon className="w-4 h-4" />
-              Details & Description
-            </h4>
-            <div className="space-y-3">
-              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
-                <div className="text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">
-                  Activity Description
-                </div>
-                <div className="text-xs text-gray-800 dark:text-gray-300">
-                  {activity.details}
-                </div>
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Performed on {new Date(activity.date).toLocaleString()}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // Action handlers
   const handleRowClick = (activity:any) => {
     console.log("Row clicked:", activity);
   };
 
-  const handleRowSelect = (selectedActivities:any) => {
-    console.log("Selected activities:", selectedActivities);
-  };
 
-  const handleSearch = (searchTerm:any) => {
-    console.log("Search term:", searchTerm);
-  };
-
-  const moreOptions = [
-    {
-      id: "export",
-      label: "Export Activities",
-    },
-    {
-      id: "refresh",
-      label: "Refresh Data",
-    },
-    {
-      id: "filter",
-      label: "Advanced Filter",
-    },
-  ];
-
-  const handleMoreOptionClick = (option:any) => {
-    console.log("More option clicked:", option);
-  };
 
   return (
     <div className="space-y-6">
