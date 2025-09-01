@@ -16,6 +16,7 @@ html2text==2020.1.16
 # AI Services (Optional - only install what you need)
 # openai==1.3.0  # Uncomment if using OpenAI
 # anthropic==0.7.0  # Uncomment if using Anthropic
+groq==0.31.0  # Fast AI with generous limits
 transformers==4.35.0
 torch==2.1.0
 sentence-transformers==2.2.2

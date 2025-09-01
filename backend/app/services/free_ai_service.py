@@ -163,217 +163,73 @@ Answer briefly and naturally:"""
         return None
     
     def _simple_keyword_answer(self, question: str, context: List[Dict]) -> str:
-        """Comprehensive full-text answering that reads entire content"""
-        logger.info(f"🔍 Performing comprehensive text analysis for: {question[:50]}...")
+        """Generate natural language answers from scraped content"""
+        logger.info(f"🔍 Creating natural response for: {question[:50]}...")
         
-        question_lower = question.lower()
-        
-        # Extract key terms from question (more comprehensive)
-        key_terms = re.findall(r'\b\w+\b', question_lower)
-        stopwords = ['what', 'how', 'when', 'where', 'why', 'who', 'the', 'and', 'for', 'are', 'you', 'was', 'were', 'is', 'in', 'on', 'at', 'to', 'from', 'with', 'about', 'this', 'that', 'they', 'them', 'their', 'there', 'then', 'than', 'these', 'those']
-        key_terms = [term for term in key_terms if len(term) > 2 and term not in stopwords]
-        
-        # Also extract phrases (2-3 word combinations)
-        question_words = question.split()
-        phrases = []
-        for i in range(len(question_words) - 1):
-            phrase = f"{question_words[i]} {question_words[i+1]}".lower().strip('.,!?')
-            if len(phrase) > 5:
-                phrases.append(phrase)
-        
-        logger.info(f"   - Key terms: {key_terms[:5]}")
-        logger.info(f"   - Key phrases: {phrases[:3]}")
-        
-        # Analyze ENTIRE content from all sources
-        all_relevant_content = []
-        
+        # Combine all content from sources
+        all_content = ""
         for item in context:
             content = item.get("content", "")
             title = item.get("title", "Untitled")
-            url = item.get("url", "")
-            
-            if not content:
-                continue
-                
-            logger.info(f"   - Analyzing source: {title} ({len(content)} chars)")
-            
-            # Split content into meaningful sections (sentences, paragraphs, sections)
-            sections = []
-            
-            # First try paragraph splits
-            paragraphs = re.split(r'\n\s*\n', content)
-            for para in paragraphs:
-                if len(para.strip()) > 30:  # Keep substantial paragraphs
-                    sections.append(para.strip())
-            
-            # If no clear paragraphs, split by sentences
-            if len(sections) == 1:
-                sentences = re.split(r'[.!?]+', content)
-                sections = [s.strip() for s in sentences if len(s.strip()) > 30]
-            
-            # Analyze each section for relevance
-            for section in sections:
-                section_lower = section.lower()
-                
-                # Count keyword matches
-                keyword_matches = sum(1 for term in key_terms if term in section_lower)
-                
-                # Count phrase matches (higher weight)
-                phrase_matches = sum(2 for phrase in phrases if phrase in section_lower)
-                
-                total_matches = keyword_matches + phrase_matches
-                
-                if total_matches > 0:
-                    # Calculate comprehensive relevance score
-                    relevance = total_matches * 10
-                    
-                    # Boost score for sections with multiple keywords close together
-                    for i, term1 in enumerate(key_terms):
-                        for term2 in key_terms[i+1:]:
-                            if term1 in section_lower and term2 in section_lower:
-                                pos1 = section_lower.find(term1)
-                                pos2 = section_lower.find(term2)
-                                distance = abs(pos1 - pos2)
-                                if distance < 50:
-                                    relevance += 20  # Very close
-                                elif distance < 100:
-                                    relevance += 10  # Close
-                                elif distance < 200:
-                                    relevance += 5   # Nearby
-                    
-                    # Boost score for exact phrase matches
-                    for phrase in phrases:
-                        if phrase in section_lower:
-                            relevance += 25
-                    
-                    all_relevant_content.append({
-                        'text': section,
-                        'relevance': relevance,
-                        'source': url,
-                        'title': title,
-                        'matches': total_matches,
-                        'length': len(section)
-                    })
+            if content:
+                # Clean content from website artifacts
+                cleaned = self._clean_website_content(content)
+                all_content += f"\n\n{title}: {cleaned}"
         
-        if not all_relevant_content:
-            # If no keyword matches, provide guidance based on available content
-            available_topics = []
-            for item in context:
-                title = item.get("title", "")
-                if title:
-                    available_topics.append(title)
-            
-            return f"I couldn't find specific information about '{', '.join(key_terms[:3])}' in the provided content.\n\nThe extracted content appears to cover these topics:\n" + '\n'.join(f"• {topic}" for topic in available_topics[:5]) + "\n\nPlease try:\n1. Asking about one of these available topics\n2. Using different keywords that might appear in the content\n3. Being more specific about what aspect you want to know"
+        if not all_content.strip():
+            return "I couldn't find any content to answer your question."
         
-        # Sort all relevant content by relevance score
-        all_relevant_content.sort(key=lambda x: x['relevance'], reverse=True)
+        # Create natural AI-like response
+        return self._create_natural_response(question, all_content)
+    
+    def _clean_website_content(self, content: str) -> str:
+        """Clean website content from HTML artifacts and navigation elements"""
+        # Remove excessive whitespace
+        content = re.sub(r'\s+', ' ', content)
+        # Remove HTML-like artifacts
+        content = re.sub(r'<[^>]+>', '', content)
+        # Remove repetitive elements
+        content = re.sub(r'(\w+)\1{2,}', r'\1', content)
+        # Remove common website navigation text
+        content = re.sub(r'\b(Home|Contact|About|Menu|Navigation|Footer|Header)\b', '', content, flags=re.IGNORECASE)
+        return content.strip()
+    
+    def _create_natural_response(self, question: str, content: str) -> str:
+        """Create a natural language response from the content"""
+        logger.info(f"📝 Creating natural response from {len(content)} characters of content")
         
-        logger.info(f"   - Found {len(all_relevant_content)} relevant content sections")
-        logger.info(f"   - Top relevance scores: {[c['relevance'] for c in all_relevant_content[:5]]}")
+        # Limit content length for better processing
+        if len(content) > 3000:
+            content = content[:3000] + "..."
         
-        # Build comprehensive answer including ALL relevant content (no artificial limits)
-        answer_sections = []
-        used_sources = {}
-        total_chars = 0
+        # Create a simple natural response by extracting relevant information
+        # This is a fallback when AI services aren't available
+        sentences = re.split(r'[.!?]+', content)
+        relevant_sentences = []
         
-        # Take the most relevant content without strict character limits
-        # Focus on providing complete, thorough information
-        for content_block in all_relevant_content:
-            if total_chars > 8000:  # Very generous limit for comprehensive answers
-                break
-                
-            text = content_block['text']
-            source = content_block['source']
-            title = content_block['title']
-            
-            # Clean and format the text properly
-            text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
-            text = text.strip()
-            
-            if text and len(text) > 20:
-                # Group content by source for better organization
-                if source not in used_sources:
-                    used_sources[source] = {
-                        'title': title,
-                        'sections': []
-                    }
-                
-                used_sources[source]['sections'].append(text)
-                total_chars += len(text)
+        question_words = set(word.lower().strip('.,!?') for word in question.split() if len(word) > 3)
         
-        if not used_sources:
-            return "I found some matching terms, but couldn't extract enough coherent information to provide a comprehensive answer."
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if len(sentence) > 20:  # Only substantial sentences
+                sentence_words = set(word.lower().strip('.,!?') for word in sentence.split())
+                # Check if sentence contains any question keywords
+                if question_words & sentence_words:
+                    relevant_sentences.append(sentence)
         
-        # Create a clean, focused answer without source headers for better flow
-        answer_sentences = []
-        seen_content = set()
+        if not relevant_sentences:
+            # If no specific matches, use first few sentences
+            relevant_sentences = [s.strip() for s in sentences[:5] if len(s.strip()) > 20]
         
-        # Extract the most relevant content and merge into coherent paragraphs
-        for content_block in all_relevant_content[:10]:  # Top 10 most relevant blocks
-            text = content_block['text']
-            
-            # Clean and normalize the text
-            text = re.sub(r'\s+', ' ', text).strip()
-            
-            # Skip if we've seen very similar content
-            normalized_text = re.sub(r'[^\w\s]', '', text.lower())
-            if normalized_text in seen_content or len(text) < 30:
-                continue
-            
-            seen_content.add(normalized_text)
-            
-            # Split into sentences and clean each one
-            sentences = re.split(r'[.!?]+', text)
-            for sentence in sentences:
-                sentence = sentence.strip()
-                if len(sentence) > 20:  # Only keep substantial sentences
-                    # Ensure sentence ends properly
-                    if not sentence.endswith(('.', '!', '?')):
-                        sentence += '.'
-                    answer_sentences.append(sentence)
+        # Create a natural response
+        if relevant_sentences:
+            response = "Based on the information provided:\n\n"
+            response += ". ".join(relevant_sentences[:3])
+            if not response.endswith('.'):
+                response += "."
+            return response
         
-        if not answer_sentences:
-            return "I found some matching content, but couldn't extract clear, readable information to answer your question properly."
-        
-        # Group sentences into coherent paragraphs
-        paragraphs = []
-        current_paragraph = []
-        
-        for sentence in answer_sentences[:15]:  # Limit to top 15 sentences for quality
-            current_paragraph.append(sentence)
-            
-            # Start new paragraph every 2-3 sentences for readability
-            if len(current_paragraph) >= 3:
-                paragraphs.append(' '.join(current_paragraph))
-                current_paragraph = []
-        
-        # Add remaining sentences
-        if current_paragraph:
-            paragraphs.append(' '.join(current_paragraph))
-        
-        # Create final clean answer
-        clean_answer = '\n\n'.join(paragraphs)
-        
-        # Remove any remaining duplicate phrases within the answer
-        final_answer = self._remove_duplicate_phrases(clean_answer)
-        
-        # Add a natural intro based on the question
-        if final_answer and len(final_answer.strip()) > 0:
-            question_lower = question.lower()
-            if 'who is' in question_lower or 'who was' in question_lower:
-                # Extract the subject name
-                subject = question_lower.replace('who is', '').replace('who was', '').strip()
-                if subject:
-                    final_answer = f"Based on the information provided, here's what I found about {subject}:\n\n{final_answer}"
-            elif 'what is' in question_lower or 'what was' in question_lower:
-                final_answer = f"Here's what I found about your question:\n\n{final_answer}"
-            elif '?' in question:
-                final_answer = f"Based on the extracted content, here's the answer to your question:\n\n{final_answer}"
-        
-        logger.info(f"   - Generated clean answer: {len(final_answer)} characters")
-        logger.info(f"   - Used {len(answer_sentences)} sentences from {len(used_sources)} sources")
-        
-        return final_answer
+        return "I found some content but couldn't extract a clear answer to your specific question."
     
     def _remove_duplicate_phrases(self, text: str) -> str:
         """Remove duplicate phrases and clean up the text"""

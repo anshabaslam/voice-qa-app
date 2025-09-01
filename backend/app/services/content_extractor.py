@@ -276,18 +276,27 @@ class ContentExtractorService:
                 continue
                 
             # Remove reference markers and edit links
-            for unwanted in p.find_all(['sup', 'a']):
-                if unwanted is None:
-                    continue
-                    
-                # Safe null checks for attributes
-                unwanted_class = unwanted.get('class') if unwanted else None
-                unwanted_title = unwanted.get('title') if unwanted else None
-                
-                if unwanted_class and 'reference' in ' '.join(unwanted_class):
-                    unwanted.decompose()
-                elif unwanted_title and 'edit' in unwanted_title.lower():
-                    unwanted.decompose()
+            try:
+                unwanted_elements = p.find_all(['sup', 'a'])
+                for unwanted in unwanted_elements:
+                    if unwanted is None:
+                        continue
+                        
+                    # Safe null checks for attributes
+                    try:
+                        unwanted_class = unwanted.get('class') if hasattr(unwanted, 'get') else None
+                        unwanted_title = unwanted.get('title') if hasattr(unwanted, 'get') else None
+                        
+                        if unwanted_class and 'reference' in ' '.join(unwanted_class):
+                            unwanted.decompose()
+                        elif unwanted_title and 'edit' in unwanted_title.lower():
+                            unwanted.decompose()
+                    except Exception:
+                        # Silently skip problematic elements
+                        continue
+            except Exception as e:
+                logger.warning(f"Error processing paragraph unwanted elements: {e}")
+                continue
             
             try:
                 text = p.get_text().strip() if p else ""

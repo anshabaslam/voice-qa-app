@@ -85,17 +85,20 @@ class AIService:
         try:
             # Try paid services first if available
             if self.openai_client:
-                logger.info("🤖 Using OpenAI GPT service")
+                logger.info("🤖 Trying OpenAI GPT service")
                 answer, sources = await self._answer_with_openai(question, context)
+                logger.info("✅ OpenAI service succeeded")
             elif self.groq_client:
-                logger.info("⚡ Using Groq service (FAST)")
+                logger.info("⚡ Trying Groq service (FAST)")
                 answer, sources = await self._answer_with_groq(question, context)
+                logger.info("✅ Groq service succeeded")
             elif self.anthropic_client:
-                logger.info("🤖 Using Anthropic Claude service")
+                logger.info("🤖 Trying Anthropic Claude service")
                 answer, sources = await self._answer_with_anthropic(question, context)
+                logger.info("✅ Anthropic service succeeded")
             else:
                 # Use free AI service as fallback
-                logger.info("🆓 Using free AI service (includes Ollama)")
+                logger.info("🆓 No paid AI services available, using free AI service")
                 logger.info(f"🔧 Ollama settings - USE_OLLAMA: {settings.USE_OLLAMA}, Model: {settings.OLLAMA_MODEL}, URL: {settings.OLLAMA_BASE_URL}")
                 result = await self.free_ai_service.answer_question(question, context, session_id)
                 answer, sources = result.answer, result.sources
