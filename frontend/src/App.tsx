@@ -3,7 +3,7 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { VoiceProvider } from './contexts/VoiceContext';
+import { VoiceProvider, useVoice } from './contexts/VoiceContext';
 import { useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -14,6 +14,7 @@ import { DocumentationPage } from './components/documentation/DocumentationPage'
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
+  const { stopSpeaking } = useVoice();
   const [currentPage, setCurrentPage] = useState('voice-qa');
 
   useEffect(() => {
@@ -24,6 +25,13 @@ function AppContent() {
       });
     });
   }, []);
+
+  const handlePageChange = (page: string) => {
+    // Stop any playing voice before navigating
+    console.log('🔄 Navigating to page:', page, '- stopping voice playback');
+    stopSpeaking();
+    setCurrentPage(page);
+  };
 
   const renderCurrentPage = () => {
     switch (currentPage) {
@@ -46,7 +54,7 @@ function AppContent() {
 
   return (
     <ErrorBoundary>
-      <DashboardLayout currentPage={currentPage} onPageChange={setCurrentPage}>
+      <DashboardLayout currentPage={currentPage} onPageChange={handlePageChange}>
         <Toaster 
           position="top-right"
           closeButton
