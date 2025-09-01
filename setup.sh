@@ -15,18 +15,6 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Create .env file if it doesn't exist
-if [ ! -f ".env" ]; then
-    echo "📝 Creating .env file from template..."
-    cp .env.example .env
-    echo "✅ .env file created!"
-    echo ""
-    echo "🆓 FREE SETUP OPTIONS:"
-    echo "   1. No API keys needed - uses free AI fallback"
-    echo "   2. Optional: Add OPENAI_API_KEY for better AI responses"
-    echo "   3. Optional: Install Ollama for local AI (ollama.ai)"
-    echo ""
-fi
 
 # Backend setup
 echo "🐍 Setting up Python backend..."
