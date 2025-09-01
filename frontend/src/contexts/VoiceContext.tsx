@@ -185,14 +185,110 @@ export function useVoice() {
   return context;
 }
 
-// Helper function for browser TTS fallback
+// Helper function for browser TTS fallback with good female voice selection
 async function speakWithBrowser(text: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    utterance.onend = () => resolve();
-    utterance.onerror = (event) => reject(new Error(`Speech synthesis failed: ${event.error}`));
-    
-    speechSynthesis.speak(utterance);
+    if (!window.speechSynthesis) {
+      reject(new Error('Speech synthesis not supported'));
+      return;
+    }
+
+    const speakWithVoices = () => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Get available voices
+      const voices = speechSynthesis.getVoices();
+      console.log('🗣️ Available browser voices:', voices.map(v => `${v.name} (${v.lang}) - ${v.localService ? 'Local' : 'Remote'}`));
+      
+      // Find the best female voice in order of preference
+      const preferredFemaleVoices = [
+        // High-quality female voices (prioritize local voices)
+        'Samantha',           // macOS - excellent quality
+        'Victoria',           // macOS - British English
+        'Fiona',             // macOS - Scottish English  
+        'Karen',             // macOS - Australian English
+        'Serena',            // macOS - English
+        'Allison',           // macOS - English
+        'Susan',             // macOS - English
+        'Google UK English Female', // Chrome - British
+        'Google US English Female', // Chrome - American
+        'Microsoft Zira Desktop',   // Windows - American
+        'Microsoft Hazel Desktop',  // Windows - British
+        'Microsoft Eva Desktop',    // Windows
+        'Alice',             // Generic
+        'Emma',              // Generic
+        'Aria',              // Generic
+        'Jenny',             // Generic
+        'Nova',              // Generic
+      ];
+
+      // Find the best available female voice
+      let selectedVoice = null;
+      for (const voiceName of preferredFemaleVoices) {
+        selectedVoice = voices.find(voice => 
+          voice.name.includes(voiceName) && 
+          voice.lang.startsWith('en') // English only
+        );
+        if (selectedVoice) break;
+      }
+
+      // Fallback: find any English female voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.startsWith('en') && 
+          (voice.name.toLowerCase().includes('female') || 
+           voice.name.toLowerCase().includes('woman') ||
+           voice.name.toLowerCase().includes('lady'))
+        );
+      }
+
+      // Ultimate fallback: any English voice (prefer local)
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.startsWith('en') && voice.localService
+        ) || voices.find(voice => voice.lang.startsWith('en'));
+      }
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log('🎤 Selected browser voice:', selectedVoice.name, `(${selectedVoice.lang})`);
+      } else {
+        console.warn('⚠️ No suitable female voice found, using default');
+      }
+
+      // Configure voice settings for natural speech
+      utterance.rate = 0.9;      // Slightly slower for clarity
+      utterance.pitch = 1.1;     // Slightly higher pitch for femininity  
+      utterance.volume = 0.8;    // Comfortable volume
+      
+      utterance.onend = () => {
+        console.log('✅ Browser TTS finished');
+        resolve();
+      };
+      
+      utterance.onerror = (event) => {
+        console.error('❌ Browser TTS error:', event.error);
+        reject(new Error(`Speech synthesis failed: ${event.error}`));
+      };
+      
+      console.log('🗣️ Speaking with browser TTS...');
+      speechSynthesis.speak(utterance);
+    };
+
+    // Check if voices are already loaded  
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      speakWithVoices();
+    } else {
+      // Wait for voices to load
+      console.log('⏳ Waiting for browser voices to load...');
+      speechSynthesis.addEventListener('voiceschanged', speakWithVoices, { once: true });
+      
+      // Fallback timeout in case voiceschanged doesn't fire
+      setTimeout(() => {
+        speechSynthesis.removeEventListener('voiceschanged', speakWithVoices);
+        speakWithVoices();
+      }, 1000);
+    }
   });
 }
