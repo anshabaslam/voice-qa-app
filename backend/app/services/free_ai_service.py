@@ -163,24 +163,39 @@ Answer briefly and naturally:"""
         return None
     
     def _simple_keyword_answer(self, question: str, context: List[Dict]) -> str:
-        """Generate natural language answers from scraped content"""
+        """Generate natural language answers from scraped content from multiple sources"""
         logger.info(f"🔍 Creating natural response for: {question[:50]}...")
         
-        # Combine all content from sources
-        all_content = ""
+        # Group by source
+        sources = {}
         for item in context:
+            url = item.get('url', 'unknown')
+            if url not in sources:
+                sources[url] = {
+                    'title': item.get('title', 'Untitled'),
+                    'content': []
+                }
             content = item.get("content", "")
-            title = item.get("title", "Untitled")
             if content:
-                # Clean content from website artifacts
-                cleaned = self._clean_website_content(content)
-                all_content += f"\n\n{title}: {cleaned}"
+                sources[url]['content'].append(content)
+        
+        # Combine content from each source
+        all_content = ""
+        source_count = 0
+        for url, source_data in sources.items():
+            if source_data['content']:
+                source_count += 1
+                combined_content = ' '.join(source_data['content'])
+                cleaned = self._clean_website_content(combined_content)
+                all_content += f"\n\nSource {source_count} - {source_data['title']}: {cleaned}"
         
         if not all_content.strip():
             return "I couldn't find any content to answer your question."
         
-        # Create natural AI-like response
-        return self._create_natural_response(question, all_content)
+        logger.info(f"📊 Processing content from {source_count} sources")
+        
+        # Create natural AI-like response mentioning multiple sources
+        return self._create_natural_response(question, all_content, source_count)
     
     def _clean_website_content(self, content: str) -> str:
         """Clean website content from HTML artifacts and navigation elements"""
@@ -194,13 +209,13 @@ Answer briefly and naturally:"""
         content = re.sub(r'\b(Home|Contact|About|Menu|Navigation|Footer|Header)\b', '', content, flags=re.IGNORECASE)
         return content.strip()
     
-    def _create_natural_response(self, question: str, content: str) -> str:
+    def _create_natural_response(self, question: str, content: str, source_count: int = 1) -> str:
         """Create a natural language response from the content"""
-        logger.info(f"📝 Creating natural response from {len(content)} characters of content")
+        logger.info(f"📝 Creating natural response from {len(content)} characters of content from {source_count} sources")
         
         # Limit content length for better processing
-        if len(content) > 3000:
-            content = content[:3000] + "..."
+        if len(content) > 4000:
+            content = content[:4000] + "..."
         
         # Create a simple natural response by extracting relevant information
         # This is a fallback when AI services aren't available
@@ -218,18 +233,27 @@ Answer briefly and naturally:"""
                     relevant_sentences.append(sentence)
         
         if not relevant_sentences:
-            # If no specific matches, use first few sentences
-            relevant_sentences = [s.strip() for s in sentences[:5] if len(s.strip()) > 20]
+            # If no specific matches, use first few sentences from each source
+            relevant_sentences = [s.strip() for s in sentences[:6] if len(s.strip()) > 20]
         
         # Create a natural response
         if relevant_sentences:
-            response = "Based on the information provided:\n\n"
-            response += ". ".join(relevant_sentences[:3])
+            if source_count > 1:
+                response = f"Based on information from {source_count} sources:\n\n"
+            else:
+                response = "Based on the information provided:\n\n"
+            
+            response += ". ".join(relevant_sentences[:4])  # Use more sentences when multiple sources
             if not response.endswith('.'):
                 response += "."
+            
+            # Add a note about multiple sources if applicable
+            if source_count > 1:
+                response += f"\n\n(Information synthesized from {source_count} different sources)"
+            
             return response
         
-        return "I found some content but couldn't extract a clear answer to your specific question."
+        return f"I found content from {source_count} source{'s' if source_count > 1 else ''} but couldn't extract a clear answer to your specific question."
     
     def _remove_duplicate_phrases(self, text: str) -> str:
         """Remove duplicate phrases and clean up the text"""
@@ -263,25 +287,42 @@ Answer briefly and naturally:"""
         return '. '.join(unique_sentences)
     
     def _prepare_context(self, context: List[Dict]) -> str:
-        """Prepare clean, concise context for AI models"""
+        """Prepare clean, concise context for AI models from multiple sources"""
+        # Group by URL to organize by source
+        sources = {}
+        for item in context:
+            url = item.get('url', 'unknown')
+            if url not in sources:
+                sources[url] = {
+                    'title': item.get('title', 'Untitled'),
+                    'chunks': []
+                }
+            sources[url]['chunks'].append(item.get('content', ''))
+        
         context_parts = []
-        for i, item in enumerate(context[:3], 1):  # Use only top 3 sources for speed
-            title = item.get('title', 'Untitled')
-            content = item.get('content', '')
+        source_limit = min(5, len(sources))  # Use up to 5 sources for free AI
+        
+        for i, (url, source_data) in enumerate(list(sources.items())[:source_limit], 1):
+            title = source_data['title']
+            # Combine chunks from the same source
+            combined_content = ' '.join(source_data['chunks'])
             
-            # Clean and drastically reduce content for speed
-            if content:
+            # Clean and reduce content for speed
+            if combined_content:
                 # Remove excessive whitespace
-                content = re.sub(r'\s+', ' ', content)
+                combined_content = re.sub(r'\s+', ' ', combined_content)
                 # Remove HTML-like artifacts
-                content = re.sub(r'<[^>]+>', '', content)
+                combined_content = re.sub(r'<[^>]+>', '', combined_content)
                 # Remove repetitive elements
-                content = re.sub(r'(\w+)\1{2,}', r'\1', content)
-                # Take only first 1000 chars per source for speed
-                content = content[:1000]
+                combined_content = re.sub(r'(\w+)\1{2,}', r'\1', combined_content)
+                # Take only first 1500 chars per source for speed
+                combined_content = combined_content[:1500]
+                if len(' '.join(source_data['chunks'])) > 1500:
+                    combined_content += "..."
                 
-            context_parts.append(f"{title}: {content}")
+            context_parts.append(f"Source {i} ({title}): {combined_content}")
             
+        logger.info(f"Prepared context from {len(context_parts)} sources for free AI")
         return "\n\n".join(context_parts)
     
     async def transcribe_audio(self, audio_data: bytes) -> str:

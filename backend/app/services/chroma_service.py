@@ -1,8 +1,13 @@
-import chromadb
+try:
+    import chromadb
+    from chromadb.utils import embedding_functions
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    CHROMADB_AVAILABLE = False
+    
 import uuid
 import logging
 from typing import List, Dict, Optional
-from chromadb.utils import embedding_functions
 import os
 
 # Disable CoreML and other problematic ONNX providers on macOS
@@ -19,9 +24,16 @@ class ChromaService:
     
     def _initialize(self):
         """Initialize ChromaDB client with Hugging Face embedding function"""
+        if not CHROMADB_AVAILABLE:
+            logger.warning("ChromaDB not available - service disabled")
+            self.client = None
+            self.collection = None
+            return
+            
         try:
             # Initialize ChromaDB client (persistent storage)
             persist_directory = os.path.join(os.path.dirname(__file__), "../../chroma_db")
+            os.makedirs(persist_directory, exist_ok=True)
             self.client = chromadb.PersistentClient(path=persist_directory)
             
             # Initialize SentenceTransformer embedding function (local, no API key needed)
@@ -36,7 +48,7 @@ class ChromaService:
                 metadata={"description": "Web content embeddings for Q&A via Hugging Face"}
             )
             
-            logger.info("ChromaDB service initialized successfully with Hugging Face embeddings")
+            logger.info("✅ ChromaDB service initialized successfully with Hugging Face embeddings")
             
         except Exception as e:
             logger.error(f"Failed to initialize ChromaDB: {e}")
@@ -114,35 +126,94 @@ class ChromaService:
         
         return False
     
-    def search_relevant_content(self, session_id: str, query: str, max_results: int = 5) -> List[Dict]:
-        """Search for relevant content chunks using semantic similarity"""
+    def search_relevant_content(self, session_id: str, query: str, max_results: int = 10) -> List[Dict]:
+        """Search for relevant content chunks using semantic similarity with balanced representation from multiple sources"""
         if not self.collection:
             return []
         
         try:
-            # Search for relevant chunks
-            results = self.collection.query(
-                query_texts=[query],
-                n_results=max_results,
+            # First, get all unique URLs for this session
+            session_results = self.collection.get(
                 where={"session_id": session_id}
             )
             
+            unique_urls = list(set([meta.get('url', '') for meta in session_results['metadatas']]))
+            logger.info(f"Found {len(unique_urls)} unique sources for session {session_id}")
+            
+            if len(unique_urls) == 1:
+                # Single source - use normal search
+                results = self.collection.query(
+                    query_texts=[query],
+                    n_results=max_results,
+                    where={"session_id": session_id}
+                )
+            else:
+                # Multiple sources - ensure balanced representation
+                results_per_source = max(2, max_results // len(unique_urls))  # At least 2 results per source
+                total_results = min(max_results * 2, 20)  # Search more results initially
+                
+                results = self.collection.query(
+                    query_texts=[query],
+                    n_results=total_results,
+                    where={"session_id": session_id}
+                )
+            
             relevant_content = []
             if results['documents'] and results['documents'][0]:
+                # Group results by URL for balanced selection
+                url_groups = {}
+                
                 for i, doc in enumerate(results['documents'][0]):
                     metadata = results['metadatas'][0][i]
+                    url = metadata.get('url', '')
                     distance = results['distances'][0][i] if 'distances' in results else 0
                     
-                    relevant_content.append({
+                    content_item = {
                         'content': doc,
-                        'url': metadata.get('url', ''),
+                        'url': url,
                         'title': metadata.get('title', ''),
                         'relevance_score': 1 - distance,  # Convert distance to similarity
-                        'chunk_index': metadata.get('chunk_index', 0)
-                    })
+                        'chunk_index': metadata.get('chunk_index', 0),
+                        'distance': distance
+                    }
+                    
+                    if url not in url_groups:
+                        url_groups[url] = []
+                    url_groups[url].append(content_item)
+                
+                # If multiple sources, balance the selection
+                if len(unique_urls) > 1:
+                    results_per_source = max(1, max_results // len(unique_urls))
+                    
+                    # Take the most relevant chunks from each source
+                    for url in unique_urls:
+                        if url in url_groups:
+                            # Sort by relevance (lowest distance = highest relevance)
+                            url_groups[url].sort(key=lambda x: x['distance'])
+                            # Take top chunks from this source
+                            relevant_content.extend(url_groups[url][:results_per_source])
+                    
+                    # Fill remaining slots with the most relevant overall
+                    remaining_slots = max_results - len(relevant_content)
+                    if remaining_slots > 0:
+                        all_remaining = []
+                        for url, items in url_groups.items():
+                            all_remaining.extend(items[results_per_source:])  # Items not yet selected
+                        
+                        all_remaining.sort(key=lambda x: x['distance'])  # Sort by relevance
+                        relevant_content.extend(all_remaining[:remaining_slots])
+                else:
+                    # Single source - take top results
+                    for url, items in url_groups.items():
+                        items.sort(key=lambda x: x['distance'])
+                        relevant_content.extend(items[:max_results])
+                
+                # Remove the distance field before returning
+                for item in relevant_content:
+                    item.pop('distance', None)
             
-            logger.info(f"Found {len(relevant_content)} relevant chunks for query")
-            return relevant_content
+            logger.info(f"Found {len(relevant_content)} relevant chunks from {len(set(item['url'] for item in relevant_content))} sources for query")
+            return relevant_content[:max_results]  # Ensure we don't exceed max_results
             
         except Exception as e:
             logger.error(f"Failed to search ChromaDB: {e}")

@@ -18,6 +18,10 @@ router = APIRouter()
 @router.post("/links", response_model=ExtractionResponse)
 async def extract_content(link_input: LinkInput):
     try:
+        logger.info(f"📥 Content Extraction Request: {len(link_input.urls)} URLs")
+        for i, url in enumerate(link_input.urls, 1):
+            logger.info(f"   - URL {i}: {str(url)}")
+        
         extractor = ContentExtractorService()
         result = await extractor.extract_from_urls(link_input.urls)
         
@@ -36,23 +40,46 @@ async def extract_content(link_input: LinkInput):
                 }
                 for content in result.extracted_content if content.success
             ]
+            
+            logger.info(f"📊 Extracted {len(context_data)} successful content items")
+            for item in context_data:
+                logger.info(f"   - {item['title']} ({len(item['content'])} chars)")
+            
             await ai_service.store_context(session_id, context_data)
             result.session_id = session_id
             
+            logger.info(f"✅ Created session {session_id} with {len(context_data)} sources")
+        else:
+            logger.warning("❌ No successful content extraction")
+            
         return result
     except Exception as e:
+        logger.error(f"❌ Content extraction failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Content extraction failed: {str(e)}")
 
 @router.post("/ask", response_model=AnswerResponse)
 async def ask_question(question_input: QuestionInput):
     try:
+        logger.info(f"🔍 Ask Question Request: '{question_input.question[:50]}...', session_id: {question_input.session_id}")
+        
+        if not question_input.session_id:
+            raise HTTPException(
+                status_code=400, 
+                detail="session_id is required. Please extract content from URLs first using the /links endpoint."
+            )
+        
         ai_service = AIService()
         result = await ai_service.answer_question(
             question_input.question,
             session_id=question_input.session_id
         )
+        logger.info(f"✅ Generated answer for session {question_input.session_id}")
         return result
+    except ValueError as e:
+        logger.error(f"❌ Question processing error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(f"❌ Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Question processing failed: {str(e)}")
 
 @router.post("/tts", response_model=TTSResponse)
@@ -107,6 +134,38 @@ async def get_audio_file(filename: str):
         return FileResponse(file_path, media_type="audio/mpeg")
     else:
         raise HTTPException(status_code=404, detail="Audio file not found")
+
+@router.get("/sessions/{session_id}")
+async def get_session_info(session_id: str):
+    try:
+        ai_service = AIService()
+        
+        # Check in-memory storage
+        context_data = ai_service._context_storage.get(session_id) if hasattr(ai_service, '_context_storage') else None
+        
+        if context_data:
+            return {
+                "session_id": session_id,
+                "status": "active",
+                "sources": len(context_data),
+                "source_info": [
+                    {
+                        "url": item.get('url', ''),
+                        "title": item.get('title', ''),
+                        "content_length": len(item.get('content', ''))
+                    }
+                    for item in context_data[:5]  # Show first 5 sources
+                ]
+            }
+        else:
+            return {
+                "session_id": session_id,
+                "status": "not_found",
+                "message": "Session not found. Please extract content first.",
+                "available_sessions": list(ai_service._context_storage.keys()) if hasattr(ai_service, '_context_storage') else []
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get session info: {str(e)}")
 
 @router.get("/health", response_model=HealthCheck)
 async def health_check():

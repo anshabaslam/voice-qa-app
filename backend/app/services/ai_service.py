@@ -74,8 +74,9 @@ class AIService:
         logger.info(f"   - Context items: {len(context) if context else 0}")
         
         if not context:
-            logger.error("No context available for session")
-            raise ValueError("No content available. Please extract content from URLs first.")
+            logger.error(f"No context available for session {session_id}")
+            logger.info("Available sessions in memory:", list(self._context_storage.keys()) if hasattr(self, '_context_storage') else "No storage")
+            raise ValueError("No content available. Please extract content from URLs first. Make sure to use the session_id returned from the /links endpoint.")
         
         # Log which services are available
         logger.info(f"   - OpenAI available: {self.openai_client is not None}")
@@ -135,19 +136,21 @@ class AIService:
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful AI assistant who provides answers based on the provided web content context.
+                    "content": """You are a helpful AI assistant who provides answers based on the provided web content context from multiple sources.
 
                     GUIDELINES:
                     1. For greetings (hi, hello, etc.) and basic conversational responses, respond naturally
                     2. For factual questions, use ONLY information from the provided web content context
-                    3. If factual information is available in the context, provide a clear and helpful answer
-                    4. If factual information is not in the context, state "I don't have that specific information in the provided content"
-                    5. Do NOT use general knowledge for factual questions - stick to the extracted content only
-                    6. Keep answers concise and focused on the question asked
-                    7. Avoid including raw HTML, navigation text, or website formatting
-                    8. When answering factual questions, reference the relevant parts of the context
+                    3. When multiple sources are available, synthesize information from ALL relevant sources
+                    4. If factual information is available in the context, provide a comprehensive answer drawing from all sources
+                    5. If factual information is not in the context, state "I don't have that specific information in the provided content"
+                    6. Do NOT use general knowledge for factual questions - stick to the extracted content only
+                    7. Keep answers informative but concise, combining insights from different sources when relevant
+                    8. Avoid including raw HTML, navigation text, or website formatting
+                    9. When answering factual questions, you may reference which source(s) the information comes from
+                    10. If sources provide contradictory information, acknowledge the differences
                     
-                    FORMAT: Respond naturally to greetings. For factual questions, answer based on the provided context."""
+                    FORMAT: Respond naturally to greetings. For factual questions, provide comprehensive answers that utilize information from all relevant sources in the context."""
                 },
                 {
                     "role": "user",
@@ -178,19 +181,21 @@ class AIService:
             messages = [
                 {
                     "role": "system",
-                    "content": """You are a helpful AI assistant who provides answers based on the provided web content context.
+                    "content": """You are a helpful AI assistant who provides answers based on the provided web content context from multiple sources.
 
                     GUIDELINES:
                     1. For greetings (hi, hello, etc.) and basic conversational responses, respond naturally
                     2. For factual questions, use ONLY information from the provided web content context
-                    3. If factual information is available in the context, provide a clear and helpful answer
-                    4. If factual information is not in the context, state "I don't have that specific information in the provided content"
-                    5. Do NOT use general knowledge for factual questions - stick to the extracted content only
-                    6. Keep answers concise and focused on the question asked
-                    7. Avoid including raw HTML, navigation text, or website formatting
-                    8. When answering factual questions, reference the relevant parts of the context
+                    3. When multiple sources are available, synthesize information from ALL relevant sources
+                    4. If factual information is available in the context, provide a comprehensive answer drawing from all sources
+                    5. If factual information is not in the context, state "I don't have that specific information in the provided content"
+                    6. Do NOT use general knowledge for factual questions - stick to the extracted content only
+                    7. Keep answers informative but concise, combining insights from different sources when relevant
+                    8. Avoid including raw HTML, navigation text, or website formatting
+                    9. When answering factual questions, you may reference which source(s) the information comes from
+                    10. If sources provide contradictory information, acknowledge the differences
                     
-                    FORMAT: Respond naturally to greetings. For factual questions, answer based on the provided context."""
+                    FORMAT: Respond naturally to greetings. For factual questions, provide comprehensive answers that utilize information from all relevant sources in the context."""
                 },
                 {
                     "role": "user",
@@ -218,24 +223,26 @@ class AIService:
         try:
             context_text = self._prepare_context(context)
             
-            prompt = f"""You are a helpful AI assistant who provides answers based on the provided web content context.
+            prompt = f"""You are a helpful AI assistant who provides answers based on the provided web content context from multiple sources.
 
             GUIDELINES:
             1. For greetings (hi, hello, etc.) and basic conversational responses, respond naturally
             2. For factual questions, use ONLY information from the provided web content context
-            3. If factual information is available in the context, provide a clear and helpful answer
-            4. If factual information is not in the context, state "I don't have that specific information in the provided content"
-            5. Do NOT use general knowledge for factual questions - stick to the extracted content only
-            6. Keep answers concise and focused on the question asked
-            7. Avoid including raw HTML, navigation text, or website formatting
-            8. When answering factual questions, reference the relevant parts of the context
+            3. When multiple sources are available, synthesize information from ALL relevant sources
+            4. If factual information is available in the context, provide a comprehensive answer drawing from all sources
+            5. If factual information is not in the context, state "I don't have that specific information in the provided content"
+            6. Do NOT use general knowledge for factual questions - stick to the extracted content only
+            7. Keep answers informative but concise, combining insights from different sources when relevant
+            8. Avoid including raw HTML, navigation text, or website formatting
+            9. When answering factual questions, you may reference which source(s) the information comes from
+            10. If sources provide contradictory information, acknowledge the differences
 
             Context:
             {context_text}
 
             Question: {question}
 
-            Please respond naturally to greetings, or analyze the context carefully for factual questions."""
+            Please respond naturally to greetings, or analyze the context carefully for factual questions, utilizing information from all available sources."""
             
             response = await self.anthropic_client.messages.create(
                 model="claude-3-sonnet-20240229",
@@ -253,26 +260,41 @@ class AIService:
             raise ValueError(f"Failed to generate answer: {str(e)}")
     
     def _prepare_context(self, context: List[Dict]) -> str:
+        # Group context by URL to organize by source
+        sources = {}
+        for item in context:
+            url = item.get('url', 'unknown')
+            if url not in sources:
+                sources[url] = {
+                    'title': item.get('title', 'Untitled'),
+                    'chunks': []
+                }
+            sources[url]['chunks'].append(item.get('content', ''))
+        
         context_parts = []
-        for i, item in enumerate(context, 1):
-            content = item['content']
-            title = item['title']
+        for i, (url, source_data) in enumerate(sources.items(), 1):
+            title = source_data['title']
+            
+            # Combine chunks from the same source
+            combined_content = ' '.join(source_data['chunks'])
             
             # Clean the content for better AI consumption
-            if content:
+            if combined_content:
                 # Remove excessive whitespace
-                content = re.sub(r'\s+', ' ', content)
+                combined_content = re.sub(r'\s+', ' ', combined_content)
                 # Remove HTML-like artifacts  
-                content = re.sub(r'<[^>]+>', '', content)
+                combined_content = re.sub(r'<[^>]+>', '', combined_content)
                 # Remove repetitive elements
-                content = re.sub(r'(\w+)\1{2,}', r'\1', content)
+                combined_content = re.sub(r'(\w+)\1{2,}', r'\1', combined_content)
                 # Use up to 4000 chars per source for good context
-                content = content[:4000]
-                if len(item['content']) > 4000:
-                    content += "..."
+                combined_content = combined_content[:4000]
+                if len(' '.join(source_data['chunks'])) > 4000:
+                    combined_content += "..."
                     
-            context_parts.append(f"Article {i}: {title}\nContent: {content}\n")
-        return "\n".join(context_parts)
+            context_parts.append(f"Source {i} - {title} ({url}):\n{combined_content}\n")
+        
+        logger.info(f"Prepared context from {len(sources)} unique sources")
+        return "\n" + "="*60 + "\n" + "\n".join(context_parts) + "\n" + "="*60
     
     async def transcribe_audio(self, audio_file: UploadFile) -> str:
         # Try OpenAI Whisper if available
@@ -308,13 +330,16 @@ class AIService:
                 relevant_content = chroma_service.search_relevant_content(
                     session_id=session_id, 
                     query=query, 
-                    max_results=5
+                    max_results=10  # Increased to ensure multiple sources are included
                 )
                 if relevant_content:
-                    logger.info(f"Found {len(relevant_content)} relevant chunks using semantic search")
+                    unique_sources = len(set(item['url'] for item in relevant_content))
+                    logger.info(f"🔍 ChromaDB: Found {len(relevant_content)} relevant chunks from {unique_sources} sources using semantic search")
                     return relevant_content
             except Exception as e:
                 logger.error(f"ChromaDB search failed: {e}")
+        elif chroma_service.collection is None:
+            logger.info("ChromaDB not available, using enhanced fallback")
         
         # Fallback to Redis/in-memory storage
         if self.redis_client:
@@ -326,19 +351,36 @@ class AIService:
             except Exception as e:
                 logger.error(f"Failed to retrieve context from Redis: {e}")
         
-        # Final fallback to in-memory storage
-        return self._context_storage.get(session_id)
+        # Final fallback to in-memory storage with multi-source enhancement
+        context_data = self._context_storage.get(session_id)
+        if context_data:
+            logger.info(f"📚 Found {len(context_data)} items in memory storage for session {session_id}")
+            if query:
+                # Enhanced multi-source context selection
+                selected_content = self._select_multi_source_content(context_data, query)
+                logger.info(f"🎯 Selected {len(selected_content)} items after multi-source filtering")
+                return selected_content
+            else:
+                # No query, return all content but limit for performance
+                return context_data[:10]
+        else:
+            logger.warning(f"❌ No context data found for session {session_id}")
+            logger.info(f"Available sessions: {list(self._context_storage.keys())}")
+            return None
     
     async def store_context(self, session_id: str, extracted_content: List[Dict]):
         # Store in ChromaDB for semantic search (primary)
-        try:
-            success = chroma_service.add_content(session_id, extracted_content)
-            if success:
-                logger.info(f"Stored content in ChromaDB for session {session_id}")
-            else:
-                logger.warning("ChromaDB storage failed, using fallback")
-        except Exception as e:
-            logger.error(f"Failed to store context in ChromaDB: {e}")
+        if chroma_service.collection:
+            try:
+                success = chroma_service.add_content(session_id, extracted_content)
+                if success:
+                    logger.info(f"✅ ChromaDB: Stored content for session {session_id}")
+                else:
+                    logger.warning("ChromaDB storage failed, using fallback")
+            except Exception as e:
+                logger.error(f"Failed to store context in ChromaDB: {e}")
+        else:
+            logger.info(f"ChromaDB not available, using fallback storage for session {session_id}")
         
         # Also store in Redis/memory for backwards compatibility
         if self.redis_client:
@@ -376,6 +418,93 @@ class AIService:
         if session_id not in self._qa_storage:
             self._qa_storage[session_id] = []
         self._qa_storage[session_id].append(qa_entry)
+    
+    def _select_multi_source_content(self, context_data: List[Dict], query: str) -> List[Dict]:
+        """Enhanced multi-source content selection without ChromaDB"""
+        logger.info(f"🔍 Multi-source selection: {len(context_data)} total items, query: '{query[:50]}...'")
+        
+        if not context_data or len(context_data) <= 5:
+            logger.info(f"📝 Small dataset ({len(context_data)} items), returning all")
+            return context_data
+        
+        # Group by URL to ensure multi-source representation
+        sources = {}
+        for item in context_data:
+            url = item.get('url', 'unknown')
+            if url not in sources:
+                sources[url] = []
+            sources[url].append(item)
+        
+        logger.info(f"📊 Found {len(sources)} unique sources:")
+        for url, items in sources.items():
+            logger.info(f"   - {url}: {len(items)} items")
+        
+        # If single source, return top content
+        if len(sources) <= 1:
+            logger.info("📝 Single source detected, returning top 10 items")
+            return context_data[:10]
+        
+        # Multi-source: ensure balanced representation
+        selected_content = []
+        items_per_source = max(2, 10 // len(sources))  # At least 2 items per source
+        logger.info(f"🎯 Target: {items_per_source} items per source")
+        
+        # Simple keyword-based relevance for each source
+        query_words = set(query.lower().split())
+        logger.info(f"🔑 Query keywords: {query_words}")
+        
+        for url, items in sources.items():
+            # Score items by keyword overlap
+            scored_items = []
+            for item in items:
+                content_words = set(item.get('content', '').lower().split())
+                title_words = set(item.get('title', '').lower().split())
+                
+                # Simple scoring: title matches worth more
+                title_score = len(query_words & title_words) * 2
+                content_score = len(query_words & content_words)
+                total_score = title_score + content_score
+                
+                scored_items.append((total_score, item))
+            
+            # Sort by score and take top items from this source
+            scored_items.sort(reverse=True, key=lambda x: x[0])
+            source_selected = [item for _, item in scored_items[:items_per_source]]
+            selected_content.extend(source_selected)
+            
+            logger.info(f"   ✅ Selected {len(source_selected)} items from {url}")
+            for score, item in scored_items[:items_per_source]:
+                logger.info(f"      - Score {score}: {item.get('title', 'Untitled')[:40]}...")
+        
+        # Fill remaining slots with highest scoring items overall
+        remaining_slots = 10 - len(selected_content)
+        if remaining_slots > 0:
+            logger.info(f"🔄 Filling {remaining_slots} remaining slots with best items")
+            
+            # Get all remaining items
+            selected_urls = {item['url'] for item in selected_content}
+            remaining_items = [item for item in context_data 
+                             if item['url'] not in selected_urls or 
+                             len([x for x in selected_content if x['url'] == item['url']]) < 3]
+            
+            # Score and add best remaining items
+            scored_remaining = []
+            for item in remaining_items:
+                content_words = set(item.get('content', '').lower().split())
+                title_words = set(item.get('title', '').lower().split())
+                title_score = len(query_words & title_words) * 2
+                content_score = len(query_words & content_words)
+                scored_remaining.append((title_score + content_score, item))
+            
+            scored_remaining.sort(reverse=True, key=lambda x: x[0])
+            additional_items = [item for _, item in scored_remaining[:remaining_slots]]
+            selected_content.extend(additional_items)
+            logger.info(f"   ➕ Added {len(additional_items)} additional items")
+        
+        unique_sources = len(set(item['url'] for item in selected_content))
+        logger.info(f"✅ Final selection: {len(selected_content)} items from {unique_sources} sources")
+        
+        return selected_content[:10]
     
     async def get_session_history(self, session_id: str) -> List[Dict]:
         if self.redis_client:
