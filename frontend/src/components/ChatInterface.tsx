@@ -98,6 +98,15 @@ export function ChatInterface({ isExtracting = false }: ChatInterfaceProps) {
           timestamp: Date.now() // Add unique timestamp to force new message creation
         };
         setCurrentAnswer(mockResponse);
+        
+        // Add the mock response message to chat
+        const responseMessage: Message = {
+          id: Date.now().toString() + '-a-' + Math.random().toString(36).substring(7),
+          content: mockAnswer,
+          isUser: false,
+          timestamp: new Date()
+        };
+        addMessageToCurrentChat(responseMessage);
         return;
       }
 
